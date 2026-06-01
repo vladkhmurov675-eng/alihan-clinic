@@ -1,0 +1,51 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Doctor {
+  id            Int           @id @default(autoincrement())
+  name          String
+  phone         String
+  specialization String
+  avatar        String        @default("/images/default-doctor.png")
+  slotDuration  Int           @default(30) // 20, 30, 40 minutes
+  workStartTime String        @default("07:00") // "HH:MM"
+  workEndTime   String        @default("11:00") // "HH:MM"
+  weekends      String        @default("6,0") // Comma-separated day indexes (e.g. 6 = Saturday, 0 = Sunday)
+  disabledDates String        @default("") // Comma-separated YYYY-MM-DD dates for vacation/unavailable
+  pin           String        @default("1234") // PIN for doctor login
+  appointments  Appointment[]
+  createdAt     DateTime      @default(now())
+}
+
+model Appointment {
+  id           Int      @id @default(autoincrement())
+  doctorId     Int
+  doctor       Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patientName  String
+  patientPhone String
+  complaint    String
+  date         String   // "YYYY-MM-DD"
+  time         String   // "HH:MM"
+  filePath     String?  // Saved file URL/path
+  status       String   @default("PENDING") // PENDING, CONFIRMED, COMPLETED, CANCELLED
+  createdAt    DateTime @default(now())
+}
+
+model WhatsAppLog {
+  id            Int      @id @default(autoincrement())
+  sentAt        DateTime @default(now())
+  recipientPhone String
+  recipientName String
+  message       String
+  status        String   // "SENT", "FAILED", "SIMULATED"
+}
+
+model Setting {
+  key   String @id
+  value String
+}
