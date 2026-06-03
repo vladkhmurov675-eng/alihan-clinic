@@ -1,6 +1,8 @@
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
+import bcrypt from 'bcryptjs';
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -9,25 +11,57 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('Seeding database...');
 
-  // Clean existing data
+  // ── Clean existing data (order matters due to foreign keys) ──
   await prisma.appointment.deleteMany({});
   await prisma.doctor.deleteMany({});
+  await prisma.admin.deleteMany({});
   await prisma.whatsAppLog.deleteMany({});
   await prisma.setting.deleteMany({});
 
-  // Seed Doctors
+  // ── Admins ──
+  const adminPassword = await bcrypt.hash('ClinicAdmin2025!', 10);
+  const directorPassword = await bcrypt.hash('ClinicDirector2025!', 10);
+
+  await prisma.admin.createMany({
+    data: [
+      {
+        name: 'Администратор',
+        phone: '+77471852674',
+        password: adminPassword,
+        role: 'ADMIN',
+        isActive: true,
+      },
+      {
+        name: 'Руководитель',
+        phone: '+77776707356',
+        password: directorPassword,
+        role: 'DIRECTOR',
+        isActive: true,
+      },
+    ],
+  });
+
+  console.log('Admins seeded.');
+  console.log('  admin@alihan-clinic.kz     → ClinicAdmin2025!');
+  console.log('  director@alihan-clinic.kz  → ClinicDirector2025!');
+
+  // ── Doctors ──
+  const therapistPassword = await bcrypt.hash('Doctor1111!', 10);
+  const neurologistPassword = await bcrypt.hash('Doctor2222!', 10);
+  const procedurePassword = await bcrypt.hash('Doctor3333!', 10);
+
   const therapist = await prisma.doctor.create({
     data: {
       name: 'Иванова Алия Сериковна',
       specialization: 'Терапевт',
       phone: '+77011112233',
+      password: therapistPassword,
       avatar: '/images/doctor-aliia.png',
-      slotDuration: 30, // 30 minutes
+      slotDuration: 30,
       workStartTime: '07:00',
       workEndTime: '11:00',
-      weekends: '6,0', // Saturday, Sunday
+      weekends: '6,0',
       disabledDates: '',
-      pin: '1111',
     },
   });
 
@@ -36,13 +70,13 @@ async function main() {
       name: 'Петров Тимур Владимирович',
       specialization: 'Невропатолог',
       phone: '+77022223344',
+      password: neurologistPassword,
       avatar: '/images/doctor-timur.png',
-      slotDuration: 20, // 20 minutes
+      slotDuration: 20,
       workStartTime: '08:00',
       workEndTime: '12:00',
-      weekends: '6,0', // Saturday, Sunday
+      weekends: '6,0',
       disabledDates: '',
-      pin: '2222',
     },
   });
 
@@ -51,21 +85,24 @@ async function main() {
       name: 'Алиханов Алихан Бауыржанович',
       specialization: 'Процедурный кабинет',
       phone: '+77033334455',
+      password: procedurePassword,
       avatar: '/images/doctor-alihan.png',
       slotDuration: 30,
       workStartTime: '07:00',
       workEndTime: '11:00',
-      weekends: '0', // Sunday only
+      weekends: '0',
       disabledDates: '',
-      pin: '3333',
     },
   });
 
-  console.log('Doctors seeded successfully.');
+  console.log('Doctors seeded.');
+  console.log('  aliia@alihan-clinic.kz      → Doctor1111!');
+  console.log('  timur@alihan-clinic.kz      → Doctor2222!');
+  console.log('  procedure@alihan-clinic.kz  → Doctor3333!');
 
-  // Create initial appointments for tomorrow: 2026-06-02
-  const tomorrow = '2026-06-02';
-  
+  // ── Appointments ──
+  const tomorrow = '2026-06-03';
+
   await prisma.appointment.createMany({
     data: [
       {
@@ -107,19 +144,24 @@ async function main() {
         time: '07:00',
         filePath: null,
         status: 'CONFIRMED',
-      }
-    ]
+      },
+    ],
   });
 
-  // Seed default settings
-  await prisma.setting.create({
-    data: {
-      key: 'clinic_name',
-      value: 'Алихан',
-    }
+  console.log('Appointments seeded.');
+
+  // ── Settings ──
+  await prisma.setting.createMany({
+    data: [
+      { key: 'clinic_name', value: 'Алихан' },
+      { key: 'clinic_phone', value: '+77273217788' },
+      { key: 'clinic_whatsapp', value: '+77019998877' },
+      { key: 'clinic_address', value: 'г. Алматы, пр. Аль-Фараби, 140А' },
+    ],
   });
 
-  console.log('Seed completed successfully!');
+  console.log('Settings seeded.');
+  console.log('\nSeed completed successfully!');
 }
 
 main()

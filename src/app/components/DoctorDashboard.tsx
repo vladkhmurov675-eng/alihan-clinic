@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, type SyntheticEvent } from 'react';
 import {
   loginDoctor,
   logoutDoctor,
@@ -9,6 +9,7 @@ import {
   updateDoctorSettings,
   getWhatsAppLogs,
   getDoctorById,
+  getCurrentDoctor,
 } from '../actions';
 import {
   Lock, LogOut, Calendar, Clock, User, Phone,
@@ -27,7 +28,7 @@ interface Doctor {
   workEndTime: string;
   weekends: string;
   disabledDates: string;
-  pin: string;
+  password: string;
 }
 
 interface Appointment {
@@ -40,12 +41,12 @@ interface Appointment {
   time: string;
   filePath: string | null;
   status: string;
-  createdAt: string;
+  createdAt: Date;
 }
 
 interface WhatsAppLogEntry {
   id: number;
-  sentAt: string;
+  sentAt: Date;
   recipientPhone: string;
   recipientName: string;
   message: string;
@@ -54,8 +55,8 @@ interface WhatsAppLogEntry {
 
 export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [selectedDoctorId, setSelectedDoctorId] = useState<number>(doctors[0]?.id || 0);
-  const [pin, setPin] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
 
@@ -73,7 +74,7 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
   const [settingsForm, setSettingsForm] = useState({
     name: '', phone: '', specialization: '',
     slotDuration: 30, workStartTime: '07:00', workEndTime: '11:00',
-    weekends: '6,0', disabledDates: '', pin: '',
+    weekends: '6,0', disabledDates: '', password: '',
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState('');
@@ -90,12 +91,12 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoggingIn(true);
     setLoginError('');
     try {
-      const result = await loginDoctor(selectedDoctorId, pin);
+      const result = await loginDoctor(phone, password);
       if (result.success) {
         setIsLoggedIn(true);
         showToast('Вход выполнен успешно');
@@ -112,7 +113,7 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
   const handleLogout = async () => {
     await logoutDoctor();
     setIsLoggedIn(false);
-    setPin('');
+    setPassword('');
     setAppointments([]);
     setDoctorProfile(null);
     setActiveTab('appointments');
@@ -133,7 +134,7 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
 
   const fetchDoctorProfile = useCallback(async () => {
     try {
-      const doc = await getDoctorById(selectedDoctorId);
+      const doc = await getCurrentDoctor();
       if (doc) {
         setDoctorProfile(doc as Doctor);
         setSettingsForm({
@@ -145,13 +146,13 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
           workEndTime: doc.workEndTime,
           weekends: doc.weekends,
           disabledDates: doc.disabledDates,
-          pin: doc.pin,
+          password: doc.password,
         });
       }
     } catch (err) {
       console.error('Error fetching doctor profile:', err);
     }
-  }, [selectedDoctorId]);
+  }, []);
 
   const fetchLogs = async () => {
     setLoadingLogs(true);
@@ -166,11 +167,9 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
   };
 
   useEffect(() => {
-    if (isLoggedIn) {
-      fetchAppointments();
-      fetchDoctorProfile();
-    }
-  }, [isLoggedIn, fetchAppointments, fetchDoctorProfile]);
+    fetchAppointments();
+    fetchDoctorProfile();
+  }, [fetchAppointments, fetchDoctorProfile]);
 
   const handleStatusChange = async (appointmentId: number, newStatus: string) => {
     try {
@@ -182,7 +181,7 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
     }
   };
 
-  const handleSaveSettings = async (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSavingSettings(true);
     setSettingsMsg('');
@@ -214,83 +213,6 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
   };
 
   // ────────────────── LOGIN SCREEN ──────────────────
-  if (!isLoggedIn) {
-    return (
-      <div className="container" style={{ paddingTop: '4rem', display: 'flex', justifyContent: 'center' }}>
-        <div className="glass-panel animate-fade-in" style={{
-          padding: '3rem', maxWidth: '420px', width: '100%',
-        }}>
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <div style={{
-              width: '64px', height: '64px', borderRadius: '16px',
-              background: 'linear-gradient(135deg, var(--color-accent-glow) 0%, var(--color-primary-glow) 100%)',
-              border: '1px solid rgba(6, 182, 212, 0.3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 1rem auto',
-            }}>
-              <Lock size={28} style={{ color: 'var(--color-accent)' }} />
-            </div>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Кабинет врача</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              Выберите врача и введите PIN-код
-            </p>
-          </div>
-
-          <form onSubmit={handleLogin}>
-            <div className="input-group">
-              <label className="input-label">Выберите врача</label>
-              <select
-                className="form-control"
-                style={{ width: '100%', cursor: 'pointer' }}
-                value={selectedDoctorId}
-                onChange={e => setSelectedDoctorId(Number(e.target.value))}
-              >
-                {doctors.map(d => (
-                  <option key={d.id} value={d.id}>
-                    {d.name} — {d.specialization}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="input-group">
-              <label className="input-label">PIN-код</label>
-              <input
-                type="password"
-                className="form-control"
-                style={{ width: '100%', letterSpacing: '0.5em', textAlign: 'center', fontSize: '1.5rem' }}
-                placeholder="••••"
-                maxLength={8}
-                value={pin}
-                onChange={e => setPin(e.target.value)}
-                autoFocus
-              />
-            </div>
-
-            {loginError && (
-              <div style={{
-                background: 'var(--color-danger-glow)',
-                border: '1px solid var(--color-danger)',
-                color: '#f87171', padding: '0.75rem 1rem',
-                borderRadius: '8px', fontSize: '0.85rem', marginBottom: '1rem',
-              }}>
-                {loginError}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loggingIn || !pin}
-              className={`btn ${loggingIn || !pin ? 'btn-disabled' : 'btn-accent'}`}
-              style={{ width: '100%', padding: '0.85rem' }}
-            >
-              {loggingIn ? 'Входим...' : 'Войти в кабинет'}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   // ────────────────── DASHBOARD ──────────────────
   const stats = {
@@ -325,9 +247,6 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
           <h1 style={{ fontSize: '1.8rem', marginBottom: '0.25rem' }}>
             Добро пожаловать, {doctorProfile?.name?.split(' ')[0] || 'Доктор'}
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            {doctorProfile?.specialization} • PIN авторизация
-          </p>
         </div>
         <button onClick={handleLogout} className="btn btn-secondary" style={{ gap: '0.4rem' }}>
           <LogOut size={16} /> Выйти
@@ -429,12 +348,11 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
               {appointments.map(appt => (
                 <div key={appt.id} className="glass-panel" style={{
                   padding: '1.5rem',
-                  borderLeft: `3px solid ${
-                    appt.status === 'CONFIRMED' ? 'var(--color-accent)' :
+                  borderLeft: `3px solid ${appt.status === 'CONFIRMED' ? 'var(--color-accent)' :
                     appt.status === 'COMPLETED' ? 'var(--color-primary)' :
-                    appt.status === 'CANCELLED' ? 'var(--color-danger)' :
-                    'var(--color-warning)'
-                  }`,
+                      appt.status === 'CANCELLED' ? 'var(--color-danger)' :
+                        'var(--color-warning)'
+                    }`,
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                     {/* Left side: patient info */}
@@ -570,15 +488,6 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
                   </select>
                 </div>
                 <div className="input-group">
-                  <label className="input-label">PIN-код</label>
-                  <input
-                    type="password"
-                    className="form-control" style={{ width: '100%' }}
-                    value={settingsForm.pin}
-                    onChange={e => setSettingsForm(prev => ({ ...prev, pin: e.target.value }))}
-                  />
-                </div>
-                <div className="input-group">
                   <label className="input-label">Начало работы</label>
                   <input
                     type="time"
@@ -655,11 +564,10 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
               {logs.map(log => (
                 <div key={log.id} className="glass-panel" style={{
                   padding: '1.25rem',
-                  borderLeft: `3px solid ${
-                    log.status === 'SIMULATED' ? 'var(--color-accent)' :
+                  borderLeft: `3px solid ${log.status === 'SIMULATED' ? 'var(--color-accent)' :
                     log.status === 'SENT' ? 'var(--color-primary)' :
-                    'var(--color-danger)'
-                  }`,
+                      'var(--color-danger)'
+                    }`,
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

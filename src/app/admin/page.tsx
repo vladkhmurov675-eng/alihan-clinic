@@ -1,14 +1,21 @@
-import { getDoctors, getSettings } from '../actions';
+import { redirect } from 'next/navigation';
+import { isAdminLoggedIn, getDoctors, getSettings } from '../actions';
 import AdminDashboard from '../components/AdminDashboard';
 
 export const revalidate = 0;
 
 export const metadata = {
   title: 'Панель администратора | Клиника Алихан',
-  description: 'Административная панель клиники Алихан. Управление врачами, настройками и журналом уведомлений.',
+  description: 'Административная панель клиники Алихан.',
 };
 
 export default async function AdminPage() {
+  // Auth check — redirect to login if not admin
+  const isAdmin = await isAdminLoggedIn();
+  if (!isAdmin) {
+    redirect('/login');
+  }
+
   let doctors: any[] = [];
   let settings: Record<string, string> = {};
   let dbError = false;
@@ -25,14 +32,11 @@ export default async function AdminPage() {
     return (
       <div className="container" style={{ paddingTop: '3rem', textAlign: 'center' }}>
         <div className="glass-panel" style={{
-          padding: '3rem',
-          maxWidth: '600px',
-          margin: '0 auto',
-          borderColor: 'var(--color-danger)',
-          background: 'var(--color-danger-glow)',
+          padding: '3rem', maxWidth: '600px', margin: '0 auto',
+          borderColor: 'var(--color-danger)', background: 'var(--color-danger-glow)',
         }}>
           <h2 style={{ color: '#f87171', marginBottom: '1rem' }}>Ошибка подключения к базе данных</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>Проверьте настройки подключения к PostgreSQL в файле <code>.env</code></p>
+          <p style={{ color: 'var(--text-secondary)' }}>Проверьте настройки PostgreSQL в файле <code>.env</code></p>
         </div>
       </div>
     );

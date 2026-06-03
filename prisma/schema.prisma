@@ -6,21 +6,24 @@ generator client {
   provider = "prisma-client-js"
 }
 
+
 model Doctor {
-  id            Int           @id @default(autoincrement())
-  name          String
-  phone         String
+  id             Int           @id @default(autoincrement())
+  name           String
+  phone          String        @unique
   specialization String
-  avatar        String        @default("/images/default-doctor.png")
-  slotDuration  Int           @default(30) // 20, 30, 40 minutes
-  workStartTime String        @default("07:00") // "HH:MM"
-  workEndTime   String        @default("11:00") // "HH:MM"
-  weekends      String        @default("6,0") // Comma-separated day indexes (e.g. 6 = Saturday, 0 = Sunday)
-  disabledDates String        @default("") // Comma-separated YYYY-MM-DD dates for vacation/unavailable
-  pin           String        @default("1234") // PIN for doctor login
-  appointments  Appointment[]
-  createdAt     DateTime      @default(now())
+  avatar         String        @default("/images/default-doctor.png")
+  slotDuration   Int           @default(30)   // 20, 30, 40 minutes
+  workStartTime  String        @default("07:00")
+  workEndTime    String        @default("11:00")
+  weekends       String        @default("6,0") // comma-separated day indexes
+  disabledDates  String        @default("")    // comma-separated YYYY-MM-DD
+  password       String        @unique
+  appointments   Appointment[]
+  createdAt      DateTime      @default(now())
 }
+
+
 
 model Appointment {
   id           Int      @id @default(autoincrement())
@@ -31,20 +34,38 @@ model Appointment {
   complaint    String
   date         String   // "YYYY-MM-DD"
   time         String   // "HH:MM"
-  filePath     String?  // Saved file URL/path
+  filePath     String?  // uploaded file URL/path
   status       String   @default("PENDING") // PENDING, CONFIRMED, COMPLETED, CANCELLED
   createdAt    DateTime @default(now())
 }
 
-model WhatsAppLog {
-  id            Int      @id @default(autoincrement())
-  sentAt        DateTime @default(now())
-  recipientPhone String
-  recipientName String
-  message       String
-  status        String   // "SENT", "FAILED", "SIMULATED"
+model Admin {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String   @unique
+  password  String   @unique
+  role      String   @default("ADMIN") // ADMIN | DIRECTOR
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
+// ─────────────────────────────────────────
+// WHATSAPP LOG
+// ─────────────────────────────────────────
+model WhatsAppLog {
+  id             Int      @id @default(autoincrement())
+  sentAt         DateTime @default(now())
+  recipientPhone String
+  recipientName  String
+  message        String
+  status         String   // "SENT", "FAILED", "SIMULATED"
+}
+
+// ─────────────────────────────────────────
+// SETTING
+// Key-value store for clinic-wide config
+// ─────────────────────────────────────────
 model Setting {
   key   String @id
   value String

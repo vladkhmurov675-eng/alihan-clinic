@@ -1,0 +1,389 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { getDoctors, getOccupiedSlots, bookAppointment } from '../actions';
+import { User, Phone, Clipboard, FileText, CheckCircle } from 'lucide-react';
+
+interface Doctor {
+    id: number;
+    name: string;
+    specialization: string;
+    workStartTime: string;
+    workEndTime: string;
+    slotDuration: number;
+    weekends: string;
+    disabledDates: string;
+}
+
+function generateSlots(start: string, end: string, duration: number): string[] {
+    const slots: string[] = [];
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    let cur = sh * 60 + sm;
+    const finish = eh * 60 + em;
+    while (cur + duration <= finish) {
+        slots.push(`${String(Math.floor(cur / 60)).padStart(2, '0')}:${String(cur % 60).padStart(2, '0')}`);
+        cur += duration;
+    }
+    return slots;
+}
+
+function isDateDisabled(dateStr: string, doctor: Doctor): boolean {
+    const date = new Date(dateStr);
+    const day = date.getDay();
+    const weekends = doctor.weekends.split(',').map(Number);
+    if (weekends.includes(day)) return true;
+    if (doctor.disabledDates && doctor.disabledDates.split(',').includes(dateStr)) return true;
+    return false;
+}
+
+// Today's date in YYYY-MM-DD for the min attribute
+const todayStr = new Date().toISOString().split('T')[0];
+
+export default function BookingPage() {
+    const [doctors, setDoctors] = useState<Doctor[]>([]);
+    const [doctorId, setDoctorId] = useState<number | ''>('');
+    const [date, setDate] = useState('');
+    const [time, setTime] = useState('');
+    const [slots, setSlots] = useState<string[]>([]);
+    const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
+    const [loadingSlots, setLoadingSlots] = useState(false);
+    const [dateError, setDateError] = useState('');
+
+    const [patientName, setPatientName] = useState('');
+    const [patientPhone, setPatientPhone] = useState('+7');
+    const [complaint, setComplaint] = useState('');
+    const [file, setFile] = useState<File | null>(null);
+
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState<any>(null);
+
+    // Load doctors on mount
+    useEffect(() => {
+        getDoctors().then(d => setDoctors(d as Doctor[]));
+    }, []);
+
+    // Load slots when doctor + date change
+    useEffect(() => {
+        setTime('');
+        setSlots([]);
+        setOccupiedSlots([]);
+        setDateError('');
+        if (!doctorId || !date) return;
+
+        const doctor = doctors.find(d => d.id === Number(doctorId));
+        if (!doctor) return;
+
+        if (isDateDisabled(date, doctor)) {
+            setDateError('Врач не принимает в этот день. Выберите другую дату.');
+            return;
+        }
+
+        setLoadingSlots(true);
+        getOccupiedSlots(Number(doctorId), date).then(occupied => {
+            setOccupiedSlots(occupied);
+            setSlots(generateSlots(doctor.workStartTime, doctor.workEndTime, doctor.slotDuration));
+            setLoadingSlots(false);
+        });
+    }, [doctorId, date, doctors]);
+
+    const availableSlots = slots.filter(s => !occupiedSlots.includes(s));
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setError('');
+
+        const phoneRegex = /^\+7\d{10}$/;
+
+        if (!doctorId) return setError('Выберите врача');
+        if (!date) return setError('Выберите дату');
+        if (!time) return setError('Выберите время');
+        if (!patientName.trim()) return setError('Введите ваше ФИО');
+        if (!phoneRegex.test(patientPhone)) return setError('Введите номер в формате +77012345678');
+
+        setSubmitting(true);
+        try {
+            const formData = new FormData();
+            formData.append('doctorId', doctorId.toString());
+            formData.append('date', date);
+            formData.append('time', time);
+            formData.append('patientName', patientName);
+            formData.append('patientPhone', patientPhone);
+            formData.append('complaint', complaint);
+            if (file) formData.append('file', file);
+
+            const res = await bookAppointment(formData);
+            if (res.success) {
+                setSuccess(res.appointment);
+            } else {
+                setError(res.error || 'Ошибка при записи');
+            }
+        } catch {
+            setError('Ошибка сервера. Попробуйте ещё раз.');
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    // ── Success screen ──
+    if (success) {
+        return (
+            <div style={{ background: 'var(--bg-primary)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                <div className="card animate-fade-in" style={{ padding: '2.5rem', maxWidth: 480, width: '100%', textAlign: 'center' }}>
+                    <CheckCircle size={56} style={{ color: 'var(--color-primary)', marginBottom: '1rem' }} />
+                    <h2 style={{ marginBottom: '0.5rem' }}>Запись оформлена!</h2>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '1.75rem', lineHeight: 1.6 }}>
+                        Ждём вас в клинике. Если понадобится изменить время — позвоните нам.
+                    </p>
+
+                    <div style={{
+                        background: 'var(--bg-secondary)', borderRadius: 10,
+                        padding: '1.25rem', textAlign: 'left',
+                        marginBottom: '1.75rem',
+                        display: 'flex', flexDirection: 'column', gap: '0.6rem',
+                        fontSize: '0.92rem',
+                    }}>
+                        {[
+                            { label: 'Пациент', value: success.patientName },
+                            { label: 'Врач', value: `${success.doctor.name} · ${success.doctor.specialization}` },
+                            { label: 'Дата и время', value: `${success.date} в ${success.time}` },
+                            { label: 'Статус', value: 'Ожидает подтверждения' },
+                        ].map(({ label, value }) => (
+                            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                                <span style={{ color: 'var(--text-muted)' }}>{label}</span>
+                                <span style={{ fontWeight: 600, textAlign: 'right' }}>{value}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    <button
+                        className="btn btn-outline"
+                        style={{ width: '100%' }}
+                        onClick={() => {
+                            setSuccess(null);
+                            setDoctorId(''); setDate(''); setTime('');
+                            setPatientName(''); setPatientPhone('+7');
+                            setComplaint(''); setFile(null);
+                        }}
+                    >
+                        Записаться ещё раз
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // ── Main form ──
+    return (
+        <div style={{ background: 'var(--bg-primary)', minHeight: '100vh' }}>
+
+            {/* Page header */}
+            <section style={{
+                background: 'linear-gradient(135deg, var(--color-primary), #1a4a1a)',
+                padding: '2.5rem 1.5rem',
+                textAlign: 'center',
+                color: '#fff',
+            }}>
+                <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800, color: '#fff', marginBottom: '0.5rem' }}>
+                    Онлайн-запись на приём
+                </h1>
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.95rem' }}>
+                    Заполните форму ниже — мы подтвердим запись в ближайшее время.
+                </p>
+            </section>
+
+            {/* Card */}
+            <div style={{ maxWidth: 620, margin: '0 auto', padding: '2.5rem 1.5rem 4rem' }}>
+                <div className="card animate-fade-in" style={{ padding: '2rem' }}>
+
+                    <form onSubmit={handleSubmit}>
+
+                        {/* ── Row 1: Doctor ── */}
+                        <div className="input-group">
+                            <label className="input-label">Специалист *</label>
+                            <select
+                                className="form-control"
+                                value={doctorId}
+                                onChange={e => { setDoctorId(Number(e.target.value)); setDate(''); setTime(''); }}
+                                style={{ width: '100%' }}
+                            >
+                                <option value="">Выберите врача</option>
+                                {doctors.map(d => (
+                                    <option key={d.id} value={d.id}>
+                                        {d.name} — {d.specialization}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* ── Row 2: Date + Time side by side ── */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label className="input-label">Дата *</label>
+                                <input
+                                    type="date"
+                                    className="form-control"
+                                    style={{ width: '100%' }}
+                                    min={todayStr}
+                                    value={date}
+                                    disabled={!doctorId}
+                                    onChange={e => setDate(e.target.value)}
+                                />
+                                {dateError && (
+                                    <span style={{ fontSize: '0.78rem', color: 'var(--color-danger)', marginTop: 4 }}>
+                                        {dateError}
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label className="input-label">Время *</label>
+                                <select
+                                    className="form-control"
+                                    style={{ width: '100%' }}
+                                    value={time}
+                                    disabled={!date || !!dateError || loadingSlots}
+                                    onChange={e => setTime(e.target.value)}
+                                >
+                                    <option value="">
+                                        {loadingSlots ? 'Загрузка...' : availableSlots.length === 0 && date ? 'Нет слотов' : 'Выберите время'}
+                                    </option>
+                                    {availableSlots.map(s => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Doctor schedule hint */}
+                        {doctorId && (() => {
+                            const doc = doctors.find(d => d.id === Number(doctorId));
+                            return doc ? (
+                                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0.5rem 0 1.25rem' }}>
+                                    Приём: {doc.workStartTime}–{doc.workEndTime}, слот {doc.slotDuration} мин
+                                </p>
+                            ) : null;
+                        })()}
+
+                        <div style={{ height: '0.25rem' }} />
+
+                        {/* Divider */}
+                        <div style={{ borderTop: '1px solid var(--border-color)', margin: '1rem 0 1.25rem' }} />
+
+                        {/* ── Row 3: Name ── */}
+                        <div className="input-group">
+                            <label className="input-label">ФИО пациента *</label>
+                            <div style={{ position: 'relative' }}>
+                                <User size={15} style={{ position: 'absolute', left: 12, top: 14, color: 'var(--text-muted)' }} />
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    style={{ width: '100%', paddingLeft: '2.25rem' }}
+                                    placeholder="Иванов Иван Иванович"
+                                    value={patientName}
+                                    onChange={e => setPatientName(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        {/* ── Row 4: Phone ── */}
+                        <div className="input-group">
+                            <label className="input-label">Номер телефона *</label>
+                            <div style={{ position: 'relative' }}>
+                                <Phone size={15} style={{ position: 'absolute', left: 12, top: 14, color: 'var(--text-muted)' }} />
+                                <input
+                                    type="tel"
+                                    className="form-control"
+                                    style={{ width: '100%', paddingLeft: '2.25rem' }}
+                                    placeholder="+7701234567"
+                                    value={patientPhone}
+                                    onChange={e => {
+
+                                        let value = e.target.value;
+
+                                        // keep only digits
+                                        const digits = value.replace(/\D/g, '');
+
+                                        // Kazakhstan number: 7 + 10 digits
+                                        const normalized = digits.startsWith('7')
+                                            ? digits.slice(0, 11)
+                                            : `7${digits}`.slice(0, 11);
+
+                                        setPatientPhone(`+${normalized}`);
+
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* ── Row 5: Complaint ── */}
+                        <div className="input-group">
+                            <label className="input-label">Жалоба / симптомы</label>
+                            <div style={{ position: 'relative' }}>
+                                <Clipboard size={15} style={{ position: 'absolute', left: 12, top: 14, color: 'var(--text-muted)' }} />
+                                <textarea
+                                    className="form-control"
+                                    style={{ width: '100%', paddingLeft: '2.25rem', resize: 'vertical' }}
+                                    rows={3}
+                                    placeholder="Опишите ваши симптомы..."
+                                    value={complaint}
+                                    onChange={e => setComplaint(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        {/* ── Row 6: File upload ── */}
+                        <div className="input-group">
+                            <label className="input-label">Прикрепить файл (МРТ, УЗИ, анализы)</label>
+                            <label style={{
+                                display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                border: '1.5px dashed var(--border-color)',
+                                borderRadius: 8, padding: '0.85rem 1rem',
+                                cursor: 'pointer', background: 'var(--bg-secondary)',
+                                transition: 'border-color 0.2s',
+                            }}
+                                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-primary)')}
+                                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-color)')}
+                            >
+                                <FileText size={18} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+                                <span style={{ fontSize: '0.88rem', color: file ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                                    {file ? `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)` : 'Нажмите чтобы выбрать файл'}
+                                </span>
+                                <input type="file" style={{ display: 'none' }} onChange={e => setFile(e.target.files?.[0] || null)} />
+                            </label>
+                        </div>
+
+                        {/* Error */}
+                        {error && (
+                            <div style={{
+                                background: 'var(--color-danger-glow)',
+                                border: '1px solid var(--color-danger)',
+                                color: 'var(--color-danger)',
+                                padding: '0.75rem 1rem',
+                                borderRadius: 8, fontSize: '0.88rem',
+                                marginBottom: '1rem',
+                            }}>
+                                {error}
+                            </div>
+                        )}
+
+                        {/* Submit */}
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className={`btn ${submitting ? 'btn-disabled' : 'btn-primary'}`}
+                            style={{ width: '100%', padding: '0.9rem', fontSize: '1rem' }}
+                        >
+                            {submitting ? 'Оформляем запись...' : 'Записаться →'}
+                        </button>
+
+                        <p style={{ textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.75rem' }}>
+                            После отправки мы свяжемся с вами для подтверждения
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+}
