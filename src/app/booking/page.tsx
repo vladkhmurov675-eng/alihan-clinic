@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getDoctors, getOccupiedSlots, bookAppointment } from '../actions';
+import { getDoctors, getOccupiedSlots, bookAppointment, getProceduresByDoctor } from '../actions';
 import { User, Phone, Clipboard, FileText, CheckCircle } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
@@ -14,6 +14,13 @@ interface Doctor {
     slotDuration: number;
     weekends: string;
     disabledDates: string;
+}
+
+interface Procedure {
+    id: number;
+    name: string;
+    duration: number;
+    price: number;
 }
 
 function generateSlots(start: string, end: string, duration: number): string[] {
@@ -50,7 +57,8 @@ export default function BookingPage() {
     const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
     const [dateError, setDateError] = useState('');
-
+    const [procedures, setProcedures] = useState<Procedure[]>([]);
+    const [procedureId, setProcedureId] = useState<number | ''>('');
     const [patientName, setPatientName] = useState('');
     const [patientPhone, setPatientPhone] = useState('+7');
     const [complaint, setComplaint] = useState('');
@@ -98,6 +106,17 @@ export default function BookingPage() {
         });
     }, [doctorId, date, doctors]);
 
+    // Load procedures when doctor changes
+    useEffect(() => {
+        setProcedures([]);
+        setProcedureId('');
+        if (!doctorId) return;
+
+        getProceduresByDoctor(Number(doctorId)).then(procs => {
+            setProcedures(procs as Procedure[]);
+        });
+    }, [doctorId]);
+
     const availableSlots = slots.filter(s => !occupiedSlots.includes(s));
 
     async function handleSubmit(e: React.FormEvent) {
@@ -107,6 +126,7 @@ export default function BookingPage() {
         const phoneRegex = /^\+7\d{10}$/;
 
         if (!doctorId) return setError('Выберите врача');
+        if (procedures.length > 0 && !procedureId) return setError('Выберите процедуру');
         if (!date) return setError('Выберите дату');
         if (!time) return setError('Выберите время');
         if (!patientName.trim()) return setError('Введите ваше ФИО');
@@ -116,6 +136,7 @@ export default function BookingPage() {
         try {
             const formData = new FormData();
             formData.append('doctorId', doctorId.toString());
+            if (procedureId) formData.append('procedureId', procedureId.toString());
             formData.append('date', date);
             formData.append('time', time);
             formData.append('patientName', patientName);
@@ -157,6 +178,8 @@ export default function BookingPage() {
                         {[
                             { label: 'Пациент', value: success.patientName },
                             { label: 'Врач', value: `${success.doctor.name} · ${success.doctor.specialization}` },
+                            ...(success.procedure ? [{ label: 'Процедура', value: success.procedure.name }] : []),
+                            { label: 'Стоимость', value: `${success.price || 5000} ₸` },
                             { label: 'Дата и время', value: `${success.date} в ${success.time}` },
                             { label: 'Статус', value: 'Ожидает подтверждения' },
                         ].map(({ label, value }) => (
@@ -175,6 +198,7 @@ export default function BookingPage() {
                             setDoctorId(''); setDate(''); setTime('');
                             setPatientName(''); setPatientPhone('+7');
                             setComplaint(''); setFile(null);
+                            setProcedureId('');
                         }}
                     >
                         Записаться ещё раз
@@ -226,6 +250,26 @@ export default function BookingPage() {
                                 ))}
                             </select>
                         </div>
+
+                        {procedures.length > 0 && (
+                            <div className="input-group">
+                                <label className="input-label">Процедура *</label>
+                                <select
+                                    className="form-control"
+                                    value={procedureId}
+                                    onChange={e => setProcedureId(Number(e.target.value))}
+                                    style={{ width: '100%' }}
+                                    required
+                                >
+                                    <option value="">Выберите процедуру</option>
+                                    {procedures.map(p => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.name} — {p.price} тг
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
                         {/* ── Row 2: Date + Time side by side ── */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

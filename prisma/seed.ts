@@ -13,6 +13,7 @@ async function main() {
 
   // ── Clean existing data (order matters due to foreign keys) ──
   await prisma.appointment.deleteMany({});
+  await prisma.procedure.deleteMany({});
   await prisma.doctor.deleteMany({});
   await prisma.admin.deleteMany({});
   await prisma.whatsAppLog.deleteMany({});
@@ -42,8 +43,6 @@ async function main() {
   });
 
   console.log('Admins seeded.');
-  console.log('  admin@alihan-clinic.kz     → ClinicAdmin2025!');
-  console.log('  director@alihan-clinic.kz  → ClinicDirector2025!');
 
   // ── Doctors ──
   const therapistPassword = await bcrypt.hash('Doctor1111!', 10);
@@ -62,6 +61,9 @@ async function main() {
       workEndTime: '11:00',
       weekends: '6,0',
       disabledDates: '',
+      education: 'КазНМУ им. С.Д. Асфендиярова',
+      experienceYears: 18,
+      description: 'Специализируется на диагностике и лечении внутренних болезней, профилактике хронических заболеваний, ведёт пациентов всех возрастов.',
     },
   });
 
@@ -77,6 +79,9 @@ async function main() {
       workEndTime: '12:00',
       weekends: '6,0',
       disabledDates: '',
+      education: 'Медицинский университет Астана',
+      experienceYears: 12,
+      description: 'Лечение головных болей, мигреней, нарушений сна, заболеваний позвоночника и периферической нервной системы.',
     },
   });
 
@@ -92,13 +97,48 @@ async function main() {
       workEndTime: '11:00',
       weekends: '0',
       disabledDates: '',
+      education: 'Алматинский медицинский колледж',
+      experienceYears: 9,
+      description: 'Проведение капельниц, внутримышечных и внутривенных инъекций, забор анализов, перевязки и другие процедуры.',
     },
   });
 
   console.log('Doctors seeded.');
-  console.log('  aliia@alihan-clinic.kz      → Doctor1111!');
-  console.log('  timur@alihan-clinic.kz      → Doctor2222!');
-  console.log('  procedure@alihan-clinic.kz  → Doctor3333!');
+
+  // ── Procedures ──
+  const primaryTherapistProc = await prisma.procedure.create({
+    data: { doctorId: therapist.id, name: 'Прием терапевта (первичный)', duration: 30, price: 5000 }
+  });
+  const secondaryTherapistProc = await prisma.procedure.create({
+    data: { doctorId: therapist.id, name: 'Прием терапевта (повторный)', duration: 30, price: 4000 }
+  });
+
+  const primaryNeurologistProc = await prisma.procedure.create({
+    data: { doctorId: neurologist.id, name: 'Прием невропатолога (первичный)', duration: 30, price: 7000 }
+  });
+  const secondaryNeurologistProc = await prisma.procedure.create({
+    data: { doctorId: neurologist.id, name: 'Прием невропатолога (повторный)', duration: 20, price: 5000 }
+  });
+
+  const dripProc = await prisma.procedure.create({
+    data: { doctorId: procedureRoom.id, name: 'Капельница (стандартная)', duration: 60, price: 4000 }
+  });
+
+  // Additional procedures for the Procedure Room to align with the list on the page
+  await prisma.procedure.createMany({
+    data: [
+      { doctorId: procedureRoom.id, name: 'Внутримышечная инъекция', duration: 10, price: 1500 },
+      { doctorId: procedureRoom.id, name: 'Внутривенная инъекция', duration: 15, price: 2000 },
+      { doctorId: procedureRoom.id, name: 'Забор крови из вены', duration: 10, price: 1500 },
+      { doctorId: procedureRoom.id, name: 'Забор крови из пальца', duration: 5, price: 800 },
+      { doctorId: procedureRoom.id, name: 'Перевязка (простая)', duration: 15, price: 2500 },
+      { doctorId: procedureRoom.id, name: 'Перевязка (сложная)', duration: 25, price: 4000 },
+      { doctorId: procedureRoom.id, name: 'ЭКГ с расшифровкой', duration: 20, price: 5000 },
+      { doctorId: procedureRoom.id, name: 'Обработка раны', duration: 20, price: 3000 },
+    ],
+  });
+
+  console.log('Procedures seeded.');
 
   // ── Appointments ──
   const tomorrow = '2026-06-03';
@@ -107,6 +147,7 @@ async function main() {
     data: [
       {
         doctorId: therapist.id,
+        procedureId: primaryTherapistProc.id,
         patientName: 'Иванова Алия',
         patientPhone: '+77771234567',
         complaint: 'Головная боль, слабость, повышенная температура',
@@ -114,9 +155,11 @@ async function main() {
         time: '07:00',
         filePath: '/uploads/mrt_head.pdf',
         status: 'CONFIRMED',
+        price: primaryTherapistProc.price,
       },
       {
         doctorId: therapist.id,
+        procedureId: secondaryTherapistProc.id,
         patientName: 'Петров Тимур',
         patientPhone: '+77789876543',
         complaint: 'Высокое давление в течение недели, головокружение',
@@ -124,9 +167,11 @@ async function main() {
         time: '07:30',
         filePath: null,
         status: 'CONFIRMED',
+        price: secondaryTherapistProc.price,
       },
       {
         doctorId: neurologist.id,
+        procedureId: primaryNeurologistProc.id,
         patientName: 'Смирнов Дмитрий',
         patientPhone: '+77051112233',
         complaint: 'Боли в спине, остеохондроз',
@@ -134,9 +179,11 @@ async function main() {
         time: '08:00',
         filePath: '/uploads/uzi_back.jpg',
         status: 'PENDING',
+        price: primaryNeurologistProc.price,
       },
       {
         doctorId: procedureRoom.id,
+        procedureId: dripProc.id,
         patientName: 'Ахметова Мадина',
         patientPhone: '+77479998877',
         complaint: 'Капельница по назначению врача',
@@ -144,6 +191,7 @@ async function main() {
         time: '07:00',
         filePath: null,
         status: 'CONFIRMED',
+        price: dripProc.price,
       },
     ],
   });
@@ -162,6 +210,15 @@ async function main() {
 
   console.log('Settings seeded.');
   console.log('\nSeed completed successfully!');
+
+  console.log('\n--- Login Credentials ---');
+  console.log('Admins:');
+  console.log('  Администратор (+77471852674) → ClinicAdmin2025!');
+  console.log('  Руководитель  (+77776707356) → ClinicDirector2025!');
+  console.log('Doctors:');
+  console.log('  Иванова Алия Сериковна (+77011112233) → Doctor1111!');
+  console.log('  Петров Тимур Владимирович (+77022223344) → Doctor2222!');
+  console.log('  Алиханов Алихан Бауыржанович (+77033334455) → Doctor3333!');
 }
 
 main()

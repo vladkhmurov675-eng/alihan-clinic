@@ -9,11 +9,14 @@ import {
   deleteDoctor,
   saveSettings,
   getWhatsAppLogs,
+  createProcedure,
+  updateProcedure,
+  deleteProcedure,
 } from '../actions';
 import {
   Lock, LogOut, Users, Settings as SettingsIcon,
   Plus, Trash2, Edit3, Save, X, MessageCircle,
-  ShieldCheck, UserPlus, Phone, Clock, Calendar,
+  ShieldCheck, UserPlus, Phone, Clock, Calendar, HeartHandshake
 } from 'lucide-react';
 
 interface Doctor {
@@ -33,6 +36,14 @@ interface Doctor {
   experienceYears: number;
 }
 
+interface Procedure {
+  id: number;
+  name: string;
+  doctorId: number;
+  duration: number;
+  price: number;
+}
+
 interface WhatsAppLogEntry {
   id: number;
   sentAt: Date;
@@ -44,9 +55,11 @@ interface WhatsAppLogEntry {
 
 export default function AdminDashboard({
   doctors: initialDoctors,
+  procedures: initialProcedures,
   settings: initialSettings,
 }: {
   doctors: Doctor[];
+  procedures: Procedure[];
   settings: Record<string, string>;
 }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -55,8 +68,9 @@ export default function AdminDashboard({
   const [loginError, setLoginError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'doctors' | 'settings' | 'logs'>('doctors');
+  const [activeTab, setActiveTab] = useState<'doctors' | 'procedures' | 'settings' | 'logs'>('doctors');
   const [doctors, setDoctors] = useState<Doctor[]>(initialDoctors);
+  const [procedures, setProcedures] = useState<Procedure[]>(initialProcedures);
   const [clinicSettings, setClinicSettings] = useState(initialSettings);
   const [logs, setLogs] = useState<WhatsAppLogEntry[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
@@ -70,6 +84,14 @@ export default function AdminDashboard({
     weekends: '6,0', disabledDates: '', password: '', education: '', experienceYears: 0, description: '',
   });
   const [savingDoctor, setSavingDoctor] = useState(false);
+
+  // Procedure form state
+  const [showProcedureForm, setShowProcedureForm] = useState(false);
+  const [editingProcedure, setEditingProcedure] = useState<Procedure | null>(null);
+  const [procedureForm, setProcedureForm] = useState({
+    name: '', doctorId: 0, duration: 0, price: 0,
+  });
+  const [savingProcedure, setSavingProcedure] = useState(false);
 
   // Settings form
   const [settingsForm, setSettingsForm] = useState({ clinic_name: clinicSettings.clinic_name || 'Алихан' });
@@ -190,6 +212,62 @@ export default function AdminDashboard({
     }
   };
 
+  const resetProcedureForm = () => {
+    setProcedureForm({
+      name: '', doctorId: 0, duration: 0, price: 0,
+    });
+    setEditingProcedure(null);
+    setShowProcedureForm(false);
+  };
+
+  const openEditProcedure = (proc: Procedure) => {
+    setEditingProcedure(proc);
+    setProcedureForm({
+      name: proc.name, doctorId: proc.doctorId, duration: proc.duration,
+      price: proc.price,
+    });
+    setShowProcedureForm(true);
+  };
+
+  const handleSaveProcedure = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSavingProcedure(true);
+    try {
+      if (editingProcedure) {
+        const result = await updateProcedure(editingProcedure.id, procedureForm);
+        if (result.success) {
+          setProcedures(prev => prev.map(d => d.id === editingProcedure.id ? result.procedure as Procedure : d));
+          showToast('Процедура обновлена');
+          resetProcedureForm();
+        }
+      } else {
+        const result = await createProcedure(procedureForm);
+        if (result.success) {
+          setProcedures(prev => [...prev, result.procedure as Procedure]);
+          showToast('Процедура добавлена');
+          resetProcedureForm();
+        }
+      }
+    } catch {
+      showToast('Ошибка сохранения', 'error');
+    } finally {
+      setSavingProcedure(false);
+    }
+  };
+
+  const handleDeleteProcedure = async (id: number) => {
+    if (!confirm('Удалить эту процедуру? Все записи к ней будут удалены.')) return;
+    try {
+      await deleteProcedure(id);
+      setProcedures(prev => prev.filter(d => d.id !== id));
+      showToast('Процедура удалена');
+    } catch {
+      showToast('Ошибка удаления', 'error');
+    }
+  };
+
+
+
   const fetchLogs = async () => {
     setLoadingLogs(true);
     try {
@@ -243,6 +321,7 @@ export default function AdminDashboard({
       }}>
         {[
           { key: 'doctors' as const, label: 'Врачи', icon: <Users size={16} /> },
+          { key: 'procedures' as const, label: 'Услуги и процедуры', icon: <HeartHandshake size={16} /> },
           { key: 'settings' as const, label: 'Настройки клиники', icon: <SettingsIcon size={16} /> },
           { key: 'logs' as const, label: 'Журнал WhatsApp', icon: <MessageCircle size={16} /> },
         ].map(tab => (
@@ -490,6 +569,166 @@ export default function AdminDashboard({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* ─── TAB: Procedures ─── */}
+      {activeTab === 'procedures' && (
+        <div className="animate-fade-in">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h2>Услуги и процедуры ({procedures.length})</h2>
+            <button
+              onClick={() => { resetProcedureForm(); setShowProcedureForm(true); }}
+              className="btn btn-primary"
+              style={{ gap: '0.4rem' }}
+            >
+              <Plus size={16} /> Добавить услугу
+            </button>
+          </div>
+
+          {/* Procedure Form */}
+          {showProcedureForm && (
+            <div className="glass-panel" style={{ padding: '2rem', marginBottom: '1.5rem', borderColor: 'var(--color-accent)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h3>{editingProcedure ? 'Редактировать услугу' : 'Добавить новую услугу'}</h3>
+                <button
+                  onClick={resetProcedureForm}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleSaveProcedure}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {/* Name — full width */}
+                  <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+                    <label className="input-label">Название услуги *</label>
+                    <input
+                      className="form-control" style={{ width: '100%' }} required
+                      value={procedureForm.name}
+                      onChange={e => setProcedureForm(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Например: Общий анализ крови"
+                    />
+                  </div>
+
+                  {/* Assigned doctor */}
+                  <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+                    <label className="input-label">Врач *</label>
+                    <select
+                      className="form-control" style={{ width: '100%' }} required
+                      value={procedureForm.doctorId || ''}
+                      onChange={e => setProcedureForm(prev => ({ ...prev, doctorId: Number(e.target.value) }))}
+                    >
+                      <option value="">— Выберите врача —</option>
+                      {doctors.map(d => (
+                        <option key={d.id} value={d.id}>{d.name} — {d.specialization}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Duration */}
+                  <div className="input-group">
+                    <label className="input-label">Длительность (мин) *</label>
+                    <input
+                      type="number" min={5} step={5}
+                      className="form-control" style={{ width: '100%' }} required
+                      value={procedureForm.duration || ''}
+                      onChange={e => setProcedureForm(prev => ({ ...prev, duration: Number(e.target.value) }))}
+                      placeholder="30"
+                    />
+                  </div>
+
+                  {/* Price */}
+                  <div className="input-group">
+                    <label className="input-label">Цена (тенге) *</label>
+                    <input
+                      type="number" min={0} step={100}
+                      className="form-control" style={{ width: '100%' }} required
+                      value={procedureForm.price || ''}
+                      onChange={e => setProcedureForm(prev => ({ ...prev, price: Number(e.target.value) }))}
+                      placeholder="5000"
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                  <button
+                    type="submit"
+                    disabled={savingProcedure}
+                    className={`btn ${savingProcedure ? 'btn-disabled' : 'btn-primary'}`}
+                  >
+                    <Save size={16} /> {savingProcedure ? 'Сохранение...' : editingProcedure ? 'Обновить' : 'Создать'}
+                  </button>
+                  <button type="button" onClick={resetProcedureForm} className="btn btn-secondary">
+                    Отмена
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Procedures List */}
+          {procedures.length === 0 ? (
+            <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
+              <HeartHandshake size={48} style={{ color: 'var(--text-muted)', marginBottom: '1rem' }} />
+              <h3 style={{ color: 'var(--text-secondary)' }}>Нет услуг</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Добавьте первую услугу или процедуру.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {procedures.map(proc => {
+                const assignedDoctor = doctors.find(d => d.id === proc.doctorId);
+                return (
+                  <div key={proc.id} className="glass-panel" style={{ padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{
+                          width: '52px', height: '52px', borderRadius: '14px',
+                          background: 'linear-gradient(135deg, var(--color-accent)22 0%, var(--color-accent)55 100%)',
+                          border: '1px solid var(--color-accent)44',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: 'var(--color-accent)', fontWeight: 700, fontSize: '1.3rem',
+                        }}>
+                          ✦
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: '1rem', margin: '0 0 0.2rem' }}>{proc.name}</h3>
+                          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <Users size={11} />
+                              {assignedDoctor ? `${assignedDoctor.name} — ${assignedDoctor.specialization}` : `Врач #${proc.doctorId}`}
+                            </span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <Clock size={11} /> {proc.duration} мин
+                            </span>
+                            <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>
+                              {proc.price.toLocaleString('ru-RU')} ₸
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          onClick={() => openEditProcedure(proc)}
+                          className="btn btn-secondary"
+                          style={{ padding: '0.5rem 0.8rem', fontSize: '0.85rem' }}
+                        >
+                          <Edit3 size={14} /> Изменить
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProcedure(proc.id)}
+                          className="btn btn-danger"
+                          style={{ padding: '0.5rem 0.8rem', fontSize: '0.85rem' }}
+                        >
+                          <Trash2 size={14} /> Удалить
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

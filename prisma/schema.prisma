@@ -1,46 +1,56 @@
-datasource db {
-  provider = "postgresql"
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-
-model Doctor {
-  id             Int           @id @default(autoincrement())
-  name           String
-  phone          String        @unique
-  specialization String
-  education      String?       @default("")
-  experienceYears Int?           @default(0)
-  description    String?        @default("")
-  avatar         String?       @default("/images/default-doctor.png")
-  slotDuration   Int           @default(30)   // 20, 30, 40 minutes
-  workStartTime  String        @default("07:00")
-  workEndTime    String        @default("11:00")
-  weekends       String        @default("6,0") // comma-separated day indexes
-  disabledDates  String        @default("")    // comma-separated YYYY-MM-DD
-  password       String        @unique
-  appointments   Appointment[]
-  createdAt      DateTime      @default(now())
-  costForService  Int?          @default(5000)
+datasource db {
+  provider = "postgresql"
 }
 
+model Doctor {
+  id              Int           @id @default(autoincrement())
+  name            String
+  phone           String        @unique
+  specialization  String
+  avatar          String?       @default("/images/default-doctor.png")
+  slotDuration    Int           @default(30)
+  workStartTime   String        @default("07:00")
+  workEndTime     String        @default("11:00")
+  weekends        String        @default("6,0")
+  disabledDates   String        @default("")
+  password        String        @unique
+  createdAt       DateTime      @default(now())
+  description     String?       @default("")
+  education       String?       @default("")
+  experienceYears Int?          @default(0)
+  appointments    Appointment[]
+  procedures      Procedure[]
+}
 
+model Procedure {
+  id           Int           @id @default(autoincrement())
+  doctorId     Int
+  name         String
+  duration     Int           @default(30)
+  price        Int           @default(5000)
+  appointments Appointment[]
+  doctor       Doctor        @relation(fields: [doctorId], references: [id])
+}
 
 model Appointment {
-  id           Int      @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   doctorId     Int
-  doctor       Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   patientName  String
   patientPhone String
   complaint    String
-  date         String   // "YYYY-MM-DD"
-  time         String   // "HH:MM"
-  filePath     String?  // uploaded file URL/path
-  status       String   @default("PENDING") // PENDING, CONFIRMED, COMPLETED, CANCELLED
-  createdAt    DateTime @default(now())
+  date         String
+  time         String
+  filePath     String?
+  status       String     @default("PENDING")
+  createdAt    DateTime   @default(now())
+  price        Int?       @default(5000)
+  procedureId  Int?
+  doctor       Doctor     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  procedure    Procedure? @relation(fields: [procedureId], references: [id])
 }
 
 model Admin {
@@ -48,28 +58,21 @@ model Admin {
   name      String
   phone     String   @unique
   password  String   @unique
-  role      String   @default("ADMIN") // ADMIN | DIRECTOR
+  role      String   @default("ADMIN")
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// ─────────────────────────────────────────
-// WHATSAPP LOG
-// ─────────────────────────────────────────
 model WhatsAppLog {
   id             Int      @id @default(autoincrement())
   sentAt         DateTime @default(now())
   recipientPhone String
   recipientName  String
   message        String
-  status         String   // "SENT", "FAILED", "SIMULATED"
+  status         String
 }
 
-// ─────────────────────────────────────────
-// SETTING
-// Key-value store for clinic-wide config
-// ─────────────────────────────────────────
 model Setting {
   key   String @id
   value String

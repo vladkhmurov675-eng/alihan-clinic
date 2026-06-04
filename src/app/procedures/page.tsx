@@ -1,21 +1,10 @@
 import Link from "next/link";
+import { getProcedures } from "../actions";
 
 export const metadata = {
   title: "Процедурный кабинет | Клиника Алихан",
   description: "Процедурный кабинет клиники Алихан. Капельницы, инъекции, перевязки, забор анализов.",
 };
-
-const PROCEDURES = [
-  { name: "Внутримышечная инъекция", duration: "10 мин", price: "1 500 ₸", icon: "💉" },
-  { name: "Внутривенная инъекция", duration: "15 мин", price: "2 000 ₸", icon: "💉" },
-  { name: "Капельница (стандартная)", duration: "45–60 мин", price: "4 000 ₸", icon: "🩸" },
-  { name: "Забор крови из вены", duration: "10 мин", price: "1 500 ₸", icon: "🔬" },
-  { name: "Забор крови из пальца", duration: "5 мин", price: "800 ₸", icon: "🔬" },
-  { name: "Перевязка (простая)", duration: "15 мин", price: "2 500 ₸", icon: "🩹" },
-  { name: "Перевязка (сложная)", duration: "25 мин", price: "4 000 ₸", icon: "🩹" },
-  { name: "ЭКГ с расшифровкой", duration: "20 мин", price: "5 000 ₸", icon: "❤️" },
-  { name: "Обработка раны", duration: "20 мин", price: "3 000 ₸", icon: "🩹" },
-];
 
 const RULES = [
   "Приходите за 10 минут до назначенного времени",
@@ -25,7 +14,9 @@ const RULES = [
   "При необходимости капельницы — возьмите рецепт с препаратами",
 ];
 
-export default function ProceduresPage() {
+
+export default async function ProceduresPage() {
+  const procedures = await getProcedures();
   return (
     <div style={{ background: "var(--bg-primary)" }}>
 
@@ -53,7 +44,7 @@ export default function ProceduresPage() {
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "3rem 1.5rem" }}>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "2rem", alignItems: "start" }}>
 
-          {/* Procedures table */}
+          {/* procedures table */}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
               <div className="section-label" style={{ margin: 0 }}>Прайс-лист</div>
@@ -75,20 +66,19 @@ export default function ProceduresPage() {
                 <span style={{ textAlign: "right" }}>Цена</span>
               </div>
 
-              {PROCEDURES.map((p, i) => (
+              {procedures.filter(p => p.doctorId === 10).map((p, i) => (
                 <div key={p.name} style={{
                   display: "grid", gridTemplateColumns: "1fr 120px 120px",
                   padding: "0.9rem 1.25rem",
-                  borderBottom: i < PROCEDURES.length - 1 ? "1px solid var(--border-color)" : "none",
+                  borderBottom: i < procedures.length - 1 ? "1px solid var(--border-color)" : "none",
                   background: i % 2 === 0 ? "#fff" : "var(--bg-primary)",
                   alignItems: "center",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                    <span style={{ fontSize: "1.1rem" }}>{p.icon}</span>
                     <span style={{ fontSize: "0.92rem", color: "var(--text-primary)" }}>{p.name}</span>
                   </div>
-                  <div style={{ textAlign: "center", fontSize: "0.85rem", color: "var(--text-muted)" }}>{p.duration}</div>
-                  <div style={{ textAlign: "right", fontSize: "0.92rem", fontWeight: 700, color: "var(--color-primary)" }}>{p.price}</div>
+                  <div style={{ textAlign: "center", fontSize: "0.85rem", color: "var(--text-muted)" }}>{p.duration} мин</div>
+                  <div style={{ textAlign: "right", fontSize: "0.92rem", fontWeight: 700, color: "var(--color-primary)" }}>{p.price} ₸</div>
                 </div>
               ))}
             </div>

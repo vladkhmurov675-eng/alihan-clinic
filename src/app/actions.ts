@@ -204,6 +204,60 @@ export async function saveSettings(settings: Record<string, string>) {
   return { success: true };
 }
 
+
+// ─────────────────────────────────────────
+// PROCEDURES
+// ─────────────────────────────────────────
+export async function getProcedureById(id: number) {
+  return prisma.procedure.findUnique({ where: { id } });
+}
+
+export async function getProcedures() {
+  return prisma.procedure.findMany({
+    orderBy: { name: 'asc' }
+  });
+}
+
+export async function getProceduresByDoctor(doctorId: number) {
+  return prisma.procedure.findMany({
+    where: { doctorId },
+    orderBy: { name: 'asc' },
+  });
+}
+
+export async function createProcedure(data: {
+  name: string;
+  doctorId: number;
+  duration: number;
+  price: number;
+}) {
+  if (!(await isAdminLoggedIn())) throw new Error('Access denied');
+  const newProcedure = await prisma.procedure.create({
+    data,
+  });
+  return { success: true, procedure: newProcedure };
+}
+
+export async function updateProcedure(id: number, data: {
+  name: string;
+  doctorId: number;
+  duration: number;
+  price: number;
+}) {
+  if (!(await isAdminLoggedIn())) throw new Error('Access denied');
+  const updated = await prisma.procedure.update({
+    where: { id },
+    data,
+  });
+  return { success: true, procedure: updated };
+}
+
+export async function deleteProcedure(id: number) {
+  if (!(await isAdminLoggedIn())) throw new Error('Access denied');
+  await prisma.procedure.delete({ where: { id } });
+  return { success: true };
+}
+
 // ─────────────────────────────────────────
 // APPOINTMENTS
 // ─────────────────────────────────────────
@@ -227,6 +281,7 @@ export async function bookAppointment(
     const date = formData.get('date') as string;
     const time = formData.get('time') as string;
     const file = formData.get('file') as File | null;
+    const procedureIdStr = formData.get('procedureId') as string | null;
     const phoneRegex = /^\+7\d{10}$/;
 
     if (!doctorIdStr || !patientName || !patientPhone || !date || !time) {
@@ -254,23 +309,38 @@ export async function bookAppointment(
       filePath = `/uploads/${filename}`;
     }
 
+    let procedureId: number | null = null;
+    let price = 5000;
+
+    if (procedureIdStr) {
+      procedureId = parseInt(procedureIdStr);
+      const proc = await prisma.procedure.findUnique({ where: { id: procedureId } });
+      if (proc) {
+        price = proc.price;
+      }
+    }
+
     const appointment = await prisma.appointment.create({
       data: {
-        doctorId, patientName, patientPhone,
+        doctorId, procedureId, patientName, patientPhone,
         complaint: complaint || 'Жалобы отсутствуют',
-        date, time, filePath, status: 'PENDING',
+        date, time, filePath, status: 'PENDING', price,
       },
-      include: { doctor: true },
+      include: { doctor: true, procedure: true },
     });
 
     const clinicSetting = await prisma.setting.findUnique({ where: { key: 'clinic_name' } });
     const clinicName = clinicSetting?.value || 'Алихан';
 
+    const detailsStr = appointment.procedure
+      ? ` на процедуру "${appointment.procedure.name}"`
+      : ` (${appointment.doctor.specialization})`;
+
     await prisma.whatsAppLog.create({
       data: {
         recipientPhone: patientPhone,
         recipientName: patientName,
-        message: `Здравствуйте, ${patientName}! Вы записаны к врачу ${appointment.doctor.name} (${appointment.doctor.specialization}) на ${date} в ${time}. Клиника "${clinicName}".`,
+        message: `Здравствуйте, ${patientName}! Вы записаны к врачу ${appointment.doctor.name}${detailsStr} на ${date} в ${time}. Клиника "${clinicName}".`,
         status: 'SIMULATED',
       },
     });
@@ -344,4 +414,37 @@ export async function getWhatsAppLogs() {
   const admin = await isAdminLoggedIn();
   if (!doctorId && !admin) throw new Error('Unauthorized');
   return prisma.whatsAppLog.findMany({ orderBy: { sentAt: 'desc' }, take: 100 });
+}
+
+// ─────────────────────────────────────────
+// DIRECTOR STATS — add this to actions.ts
+// ─────────────────────────────────────────
+
+export async function getDirectorStats(from: string, to: string) {
+  if (!(await isAdminLoggedIn())) throw new Error('Access denied');
+
+  const appointments = await prisma.appointment.findMany({
+    where: {
+      date: { gte: from, lte: to },
+    },
+    include: {
+      doctor: { select: { id: true, name: true, specialization: true } },
+      procedure: { select: { id: true, name: true, price: true } },
+    },
+    orderBy: { date: 'asc' },
+  });
+
+  return appointments;
+}
+
+export async function getAllAppointmentsForAdmin() {
+  if (!(await isAdminLoggedIn())) throw new Error('Access denied');
+  return prisma.appointment.findMany({
+    include: {
+      doctor: { select: { id: true, name: true, specialization: true } },
+      procedure: { select: { id: true, name: true, price: true } },
+    },
+    orderBy: [{ date: 'desc' }, { time: 'asc' }],
+    take: 500,
+  });
 }
