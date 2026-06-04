@@ -12,7 +12,10 @@ model Doctor {
   name           String
   phone          String        @unique
   specialization String
-  avatar         String        @default("/images/default-doctor.png")
+  education      String?       @default("")
+  experienceYears Int?           @default(0)
+  description    String?        @default("")
+  avatar         String?       @default("/images/default-doctor.png")
   slotDuration   Int           @default(30)   // 20, 30, 40 minutes
   workStartTime  String        @default("07:00")
   workEndTime    String        @default("11:00")
@@ -21,6 +24,7 @@ model Doctor {
   password       String        @unique
   appointments   Appointment[]
   createdAt      DateTime      @default(now())
+  costForService  Int?          @default(5000)
 }
 
 

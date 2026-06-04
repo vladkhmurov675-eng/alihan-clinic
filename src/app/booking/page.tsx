@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getDoctors, getOccupiedSlots, bookAppointment } from '../actions';
 import { User, Phone, Clipboard, FileText, CheckCircle } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 interface Doctor {
     id: number;
@@ -58,6 +59,15 @@ export default function BookingPage() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState<any>(null);
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const id = searchParams.get('doctorId');
+
+        if (id) {
+            setDoctorId(Number(id));
+        }
+    }, [searchParams]);
 
     // Load doctors on mount
     useEffect(() => {

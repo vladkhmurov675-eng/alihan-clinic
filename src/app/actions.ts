@@ -136,6 +136,9 @@ export async function createDoctor(data: {
   name: string; phone: string; specialization: string;
   slotDuration: number; workStartTime: string; workEndTime: string;
   weekends: string; disabledDates: string; password: string;
+  education: string;
+  experienceYears: number;
+  description: string;
 }) {
   if (!(await isAdminLoggedIn())) throw new Error('Access denied');
   const hashed = await bcrypt.hash(data.password, 10);
@@ -165,6 +168,9 @@ export async function updateDoctorSettings(data: {
   name: string; phone: string; specialization: string;
   slotDuration: number; workStartTime: string; workEndTime: string;
   weekends: string; disabledDates: string; password: string;
+  education: string;
+  experienceYears: number;
+  description: string;
 }) {
   const doctorId = await getSessionDoctorId();
   if (!doctorId) throw new Error('Unauthorized');
@@ -275,13 +281,22 @@ export async function bookAppointment(
     return { success: false, error: 'Произошла ошибка при бронировании' };
   }
 }
-
-export async function getDoctorAppointments(date: string) {
+export async function getDoctorAppointments(date?: string) {
   const doctorId = await getSessionDoctorId();
-  if (!doctorId) throw new Error('Unauthorized');
+
+  if (!doctorId) {
+    throw new Error('Unauthorized');
+  }
+
   return prisma.appointment.findMany({
-    where: { doctorId, date },
-    orderBy: { time: 'asc' },
+    where: {
+      doctorId,
+      ...(date ? { date } : {}),
+    },
+    orderBy: [
+      { date: 'desc' },
+      { time: 'asc' },
+    ],
   });
 }
 

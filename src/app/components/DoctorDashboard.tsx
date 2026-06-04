@@ -29,6 +29,9 @@ interface Doctor {
   weekends: string;
   disabledDates: string;
   password: string;
+  education: string;
+  experienceYears: number;
+  description: string;
 }
 
 interface Appointment {
@@ -68,6 +71,13 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
+  const [dateFilter, setDateFilter] = useState('');
+  const [sortBy, setSortBy] = useState<'date' | 'time' | 'status'>('date');
+  const [filterMode, setFilterMode] = useState<'all' | 'date' | 'month' | 'year'>('date');
+  const [monthFilter, setMonthFilter] = useState('');   // "2026-06"
+  const [yearFilter, setYearFilter] = useState('');     // "2026"
+  const [timeFilter, setTimeFilter] = useState('');     // "07:00"
+  const [statusFilter, setStatusFilter] = useState(''); // "CONFIRMED" | ""
   const [doctorProfile, setDoctorProfile] = useState<Doctor | null>(null);
 
   // Settings form state
@@ -75,9 +85,13 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
     name: '', phone: '', specialization: '',
     slotDuration: 30, workStartTime: '07:00', workEndTime: '11:00',
     weekends: '6,0', disabledDates: '', password: '',
+    education: '',
+    experienceYears: 0,
+    description: '',
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState('');
+
 
   // WhatsApp logs
   const [logs, setLogs] = useState<WhatsAppLogEntry[]>([]);
@@ -122,15 +136,62 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
     try {
-      const appts = await getDoctorAppointments(selectedDate);
-      setAppointments(appts as Appointment[]);
+      // Only pass a specific date to the server when in 'date' mode
+      const serverDate = filterMode === 'date' ? dateFilter || undefined : undefined;
+      const appts = await getDoctorAppointments(serverDate);
+      let data = [...(appts as Appointment[])];
+
+      // Client-side month filter
+      if (filterMode === 'month' && monthFilter) {
+        data = data.filter(a => a.date.startsWith(monthFilter)); // e.g. "2026-06"
+      }
+
+      // Client-side year filter
+      if (filterMode === 'year' && yearFilter) {
+        data = data.filter(a => a.date.startsWith(yearFilter)); // e.g. "2026"
+      }
+
+      // Client-side time filter
+      if (timeFilter) {
+        data = data.filter(a => a.time.startsWith(timeFilter));
+      }
+
+      // Client-side status filter
+      if (statusFilter) {
+        data = data.filter(a => a.status === statusFilter);
+      }
+
+      // Sorting (keep your existing switch)
+      switch (sortBy) {
+        case 'status':
+          data.sort((a, b) =>
+            a.status.localeCompare(b.status)
+          );
+          break;
+
+        case 'time':
+          data.sort((a, b) =>
+            a.time.localeCompare(b.time)
+          );
+          break;
+
+        case 'date':
+        default:
+          data.sort(
+            (a, b) =>
+              b.date.localeCompare(a.date) ||
+              a.time.localeCompare(b.time)
+          );
+      }
+
+      setAppointments(data);
     } catch (err) {
       console.error('Error fetching appointments:', err);
       showToast('Ошибка загрузки записей', 'error');
     } finally {
       setLoading(false);
     }
-  }, [selectedDate]);
+  }, [filterMode, dateFilter, monthFilter, yearFilter, timeFilter, statusFilter, sortBy]);
 
   const fetchDoctorProfile = useCallback(async () => {
     try {
@@ -147,6 +208,9 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
           weekends: doc.weekends,
           disabledDates: doc.disabledDates,
           password: doc.password,
+          education: doc.education,
+          experienceYears: doc.experienceYears,
+          description: doc.description,
         });
       }
     } catch (err) {
@@ -318,14 +382,114 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
         <div className="animate-fade-in">
           {/* Date selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-            <label className="input-label" style={{ margin: 0 }}>Дата:</label>
-            <input
-              type="date"
+
+            {/* Mode selector */}
+            <select
               className="form-control"
               style={{ width: 'auto' }}
-              value={selectedDate}
-              onChange={e => setSelectedDate(e.target.value)}
+              value={filterMode}
+              onChange={e => setFilterMode(e.target.value as any)}
+            >
+              <option value="all">Все записи</option>
+              <option value="date">По дате</option>
+              <option value="month">По месяцу</option>
+              <option value="year">По году</option>
+            </select>
+
+            {/* Conditional date/month/year input */}
+            {filterMode === 'date' && (
+              <input
+                type="date"
+                className="form-control"
+                style={{ width: 'auto' }}
+                value={dateFilter}
+                onChange={e => setDateFilter(e.target.value)}
+              />
+            )}
+            {filterMode === 'month' && (
+              <>
+                <select
+                  className="form-control"
+                  style={{ width: 'auto' }}
+                  value={yearFilter}
+                  onChange={e => {
+                    setYearFilter(e.target.value);
+                    setMonthFilter(''); // reset month when year changes
+                  }}
+                >
+                  <option value="">Выберите год</option>
+                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i)
+                    .map(y => (
+                      <option key={y} value={String(y)}>{y}</option>
+                    ))}
+                </select>
+
+                <select
+                  className="form-control"
+                  style={{ width: 'auto' }}
+                  value={monthFilter}
+                  onChange={e => setMonthFilter(e.target.value)}
+                >
+                  <option value="">Выберите месяц</option>
+                  {['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+                    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
+                    .map((name, i) => {
+                      const val = `${yearFilter || new Date().getFullYear()}-${String(i + 1).padStart(2, '0')}`;
+                      return <option key={val} value={val}>{name}</option>;
+                    })}
+                </select>
+              </>
+            )}
+            {filterMode === 'year' && (
+              <select
+                className="form-control"
+                style={{ width: 'auto' }}
+                value={yearFilter}
+                onChange={e => setYearFilter(e.target.value)}
+              >
+                <option value="">Выберите год</option>
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i)
+                  .map(y => (
+                    <option key={y} value={String(y)}>{y}</option>
+                  ))}
+              </select>
+            )}
+            {/* Time filter */}
+            <input
+              type="time"
+              className="form-control"
+              style={{ width: 'auto' }}
+              value={timeFilter}
+              onChange={e => setTimeFilter(e.target.value)}
+              title="Фильтр по времени"
             />
+
+            {/* Status filter */}
+            <select
+              className="form-control"
+              style={{ width: 'auto' }}
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+            >
+              <option value="">Все статусы</option>
+              <option value="PENDING">Ожидает</option>
+              <option value="CONFIRMED">Подтверждён</option>
+              <option value="COMPLETED">Завершён</option>
+              <option value="CANCELLED">Отменён</option>
+            </select>
+
+            {/* Sort */}
+            <select
+              className="form-control"
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as any)}
+              style={{ width: 'auto' }}
+            >
+              <option value="date">Сортировать по дате</option>
+              <option value="time">Сортировать по времени</option>
+              <option value="status">Сортировать по статусу</option>
+            </select>
+
             <button onClick={fetchAppointments} className="btn btn-accent" style={{ padding: '0.6rem 1.2rem' }}>
               Обновить
             </button>
@@ -338,7 +502,7 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
           ) : appointments.length === 0 ? (
             <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
               <Calendar size={48} style={{ color: 'var(--text-muted)', marginBottom: '1rem' }} />
-              <h3 style={{ color: 'var(--text-secondary)' }}>Нет записей на {selectedDate}</h3>
+              <h3 style={{ color: 'var(--text-secondary)' }}>Нет записей</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
                 Попробуйте выбрать другую дату
               </p>
@@ -359,7 +523,7 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
                     <div style={{ flex: 1, minWidth: '250px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                         <Clock size={14} style={{ color: 'var(--color-accent)' }} />
-                        <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>{appt.time}</span>
+                        <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>{appt.date},{appt.time}</span>
                         <span className={`badge ${statusBadgeClass[appt.status]}`}>
                           {statusLabels[appt.status]}
                         </span>
@@ -472,6 +636,31 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
                     className="form-control" style={{ width: '100%' }}
                     value={settingsForm.specialization}
                     onChange={e => setSettingsForm(prev => ({ ...prev, specialization: e.target.value }))}
+                  />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Образование</label>
+                  <input
+                    className="form-control" style={{ width: '100%' }}
+                    value={settingsForm.education}
+                    onChange={e => setSettingsForm(prev => ({ ...prev, education: e.target.value }))}
+                  />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Опыт (лет)</label>
+                  <input
+                    type="number"
+                    className="form-control" style={{ width: '100%' }}
+                    value={settingsForm.experienceYears}
+                    onChange={e => setSettingsForm(prev => ({ ...prev, experienceYears: Number(e.target.value) }))}
+                  />
+                </div>
+                <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+                  <label className="input-label">Описание / Краткая биография</label>
+                  <textarea
+                    className="form-control" style={{ width: '100%', minHeight: '80px', resize: 'vertical' }}
+                    value={settingsForm.description}
+                    onChange={e => setSettingsForm(prev => ({ ...prev, description: e.target.value }))}
                   />
                 </div>
                 <div className="input-group">

@@ -1,3 +1,4 @@
+import { getDoctors } from '../actions';
 import Link from "next/link";
 
 export const metadata = {
@@ -5,41 +6,13 @@ export const metadata = {
   description: "Специалисты клиники Алихан — терапевт, невропатолог, процедурный кабинет.",
 };
 
-const DOCTORS = [
-  {
-    name: "Сейткали Алихан Болатович",
-    role: "Терапевт",
-    exp: "18 лет опыта",
-    edu: "КазНМУ им. С.Д. Асфендиярова",
-    desc: "Специализируется на диагностике и лечении внутренних болезней, профилактике хронических заболеваний, ведёт пациентов всех возрастов.",
-    schedule: "Пн–Пт: 07:00–11:00",
-    slot: "20 мин",
-    color: "#1a4a6b",
-    emoji: "🩺",
-  },
-  {
-    name: "Әбенова Гүлнар Серікқызы",
-    role: "Невропатолог",
-    exp: "12 лет опыта",
-    edu: "Медицинский университет Астана",
-    desc: "Лечение головных болей, мигреней, нарушений сна, заболеваний позвоночника и периферической нервной системы.",
-    schedule: "Пн–Сб: 08:00–13:00",
-    slot: "30 мин",
-    color: "#2d7a5f",
-    emoji: "🧠",
-  },
-  {
-    name: "Жұмабеков Дамир Ержанович",
-    role: "Процедурная медсестра",
-    exp: "9 лет опыта",
-    edu: "Алматинский медицинский колледж",
-    desc: "Проведение капельниц, внутримышечных и внутривенных инъекций, забор анализов, перевязки и другие процедуры.",
-    schedule: "Пн–Сб: 07:00–14:00",
-    slot: "15 мин",
-    color: "#7a5c2e",
-    emoji: "💉",
-  },
-];
+function getDoctorColor(spec: string) {
+  if (spec.includes('Терап')) return '#1a4a6b';
+  if (spec.includes('Невро')) return '#2d7a5f';
+  if (spec.includes('Процедур')) return '#7a5c2e';
+
+  return '#4f46e5';
+}
 
 function Initials({ name, color }: { name: string; color: string }) {
   const parts = name.split(" ").slice(0, 2).map((n) => n[0]);
@@ -56,7 +29,8 @@ function Initials({ name, color }: { name: string; color: string }) {
   );
 }
 
-export default function DoctorsPage() {
+export default async function DoctorsPage() {
+  const doctors = await getDoctors();
   return (
     <div style={{ background: "var(--bg-primary)" }}>
 
@@ -80,9 +54,9 @@ export default function DoctorsPage() {
 
       {/* Doctors */}
       <section style={{ maxWidth: 1000, margin: "0 auto", padding: "3rem 1.5rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-        {DOCTORS.map((d) => (
-          <div key={d.name} className="card" style={{ padding: "2rem", display: "flex", gap: "2rem", alignItems: "flex-start" }}>
-            <Initials name={d.name} color={d.color} />
+        {doctors.map((d) => (
+          <div key={d.id} className="card" style={{ padding: "2rem", display: "flex", gap: "2rem", alignItems: "flex-start" }}>
+            <Initials name={d.name} color={getDoctorColor(d.specialization)} />
 
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", marginBottom: "0.25rem" }}>
@@ -91,21 +65,21 @@ export default function DoctorsPage() {
                   background: "var(--color-primary-glow)", color: "var(--color-primary)",
                   border: "1px solid rgba(26,74,107,0.2)",
                   fontSize: "0.75rem", fontWeight: 700, padding: "2px 10px", borderRadius: 20,
-                }}>{d.role}</span>
+                }}>{d.specialization}</span>
               </div>
 
               <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "0.75rem" }}>
-                {d.edu} · {d.exp}
+                {d.education} · {d.experienceYears}
               </div>
 
               <p style={{ fontSize: "0.95rem", lineHeight: 1.7, color: "var(--text-secondary)", marginBottom: "1rem" }}>
-                {d.desc}
+                {d.description}
               </p>
 
               <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
                 {[
-                  { icon: "📅", text: d.schedule },
-                  { icon: "⏱️", text: `Приём: ${d.slot}` },
+                  { icon: "📅", text: d.workStartTime },
+                  { icon: "⏱️", text: `Приём: ${d.slotDuration}` },
                 ].map(({ icon, text }) => (
                   <div key={text} style={{
                     display: "flex", alignItems: "center", gap: 6,
@@ -117,7 +91,7 @@ export default function DoctorsPage() {
                 ))}
               </div>
 
-              <Link href="/booking" className="btn btn-primary" style={{ fontSize: "0.9rem", padding: "0.6rem 1.4rem" }}>
+              <Link href={`/booking?doctorId=${d.id}`} className="btn btn-primary" style={{ fontSize: "0.9rem", padding: "0.6rem 1.4rem" }}>
                 Записаться к врачу →
               </Link>
             </div>
