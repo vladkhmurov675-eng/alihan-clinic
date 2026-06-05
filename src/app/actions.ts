@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import fs from 'fs/promises';
 import path from 'path';
 import { sendWhatsAppMessage } from '@/app/lib/whatsapp';
+import { uploadFile } from '@/app/lib/r2';
 
 // ─────────────────────────────────────────
 // SESSION HELPERS
@@ -301,13 +302,7 @@ export async function bookAppointment(
 
     let filePath: string | null = null;
     if (file && file.size > 0) {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-      await fs.mkdir(uploadDir, { recursive: true });
-      const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      await fs.writeFile(path.join(uploadDir, filename), buffer);
-      filePath = `/uploads/${filename}`;
+      filePath = await uploadFile(file);
     }
 
     let procedureId: number | null = null;
