@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "notify": "npx tsx src/app/scripts/sendreminders.ts",
     "start": "next start",
     "lint": "eslint"
   },
@@ -27,6 +28,7 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^10.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "pg": "^8.21.0",
