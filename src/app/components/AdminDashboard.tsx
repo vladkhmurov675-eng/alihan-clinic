@@ -12,12 +12,15 @@ import {
   createProcedure,
   updateProcedure,
   deleteProcedure,
+  updateAppointment,
+  deleteAppointment,
 } from '../actions';
 import {
   Lock, LogOut, Users, Settings as SettingsIcon,
   Plus, Trash2, Edit3, Save, X, MessageCircle,
   ShieldCheck, UserPlus, Phone, Clock, Calendar, HeartHandshake
 } from 'lucide-react';
+
 
 interface Doctor {
   id: number;
@@ -44,6 +47,20 @@ interface Procedure {
   price: number;
 }
 
+interface Appointment {
+  id: number;
+  patientName: string;
+  patientPhone: string;
+  date: string;
+  time: string;
+  status: string;
+  doctorId: number;
+  procedureId: number;
+  complaint: string;
+  price: number;
+  filePath: string;
+}
+
 interface WhatsAppLogEntry {
   id: number;
   sentAt: Date;
@@ -56,10 +73,12 @@ interface WhatsAppLogEntry {
 export default function AdminDashboard({
   doctors: initialDoctors,
   procedures: initialProcedures,
+  appointments: initialAppointments,
   settings: initialSettings,
 }: {
   doctors: Doctor[];
   procedures: Procedure[];
+  appointments: Appointment[];
   settings: Record<string, string>;
 }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -68,9 +87,10 @@ export default function AdminDashboard({
   const [loginError, setLoginError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'doctors' | 'procedures' | 'settings' | 'logs'>('doctors');
+  const [activeTab, setActiveTab] = useState<'doctors' | 'procedures' | 'appointments' | 'settings' | 'logs'>('doctors');
   const [doctors, setDoctors] = useState<Doctor[]>(initialDoctors);
   const [procedures, setProcedures] = useState<Procedure[]>(initialProcedures);
+  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
   const [clinicSettings, setClinicSettings] = useState(initialSettings);
   const [logs, setLogs] = useState<WhatsAppLogEntry[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
@@ -92,6 +112,23 @@ export default function AdminDashboard({
     name: '', doctorId: 0, duration: 0, price: 0,
   });
   const [savingProcedure, setSavingProcedure] = useState(false);
+
+  // Appointment form state
+  const [showAppointmentForm, setShowAppointmentForm] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+  const [appointmentForm, setAppointmentForm] = useState({
+    patientName: '',
+    patientPhone: '',
+    date: '',
+    time: '',
+    status: '',
+    doctorId: 0,
+    procedureId: 0,
+    complaint: '',
+    price: 0,
+    filePath: '',
+  });
+  const [savingAppointment, setSavingAppointment] = useState(false);
 
   // Settings form
   const [settingsForm, setSettingsForm] = useState({ clinic_name: clinicSettings.clinic_name || 'Алихан' });
@@ -266,7 +303,69 @@ export default function AdminDashboard({
     }
   };
 
+  const resetAppointmentForm = () => {
+    setAppointmentForm({
+      patientName: '',
+      patientPhone: '',
+      date: '',
+      time: '',
+      status: '',
+      doctorId: 0,
+      procedureId: 0,
+      complaint: '',
+      price: 0,
+      filePath: '',
+    });
+    setEditingAppointment(null);
+    setShowAppointmentForm(false);
+  };
 
+  const openEditAppointment = (appointment: Appointment) => {
+    setEditingAppointment(appointment);
+    setAppointmentForm({
+      patientName: appointment.patientName,
+      patientPhone: appointment.patientPhone,
+      date: appointment.date,
+      time: appointment.time,
+      status: appointment.status,
+      doctorId: appointment.doctorId,
+      procedureId: appointment.procedureId,
+      complaint: appointment.complaint,
+      price: appointment.price,
+      filePath: appointment.filePath,
+    });
+    setShowAppointmentForm(true);
+  };
+
+  const handleSaveAppointment = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSavingAppointment(true);
+    try {
+      if (editingAppointment) {
+        const result = await updateAppointment(editingAppointment.id, appointmentForm);
+        if (result.success) {
+          setAppointments(prev => prev.map(a => a.id === editingAppointment.id ? result.appointment as Appointment : a));
+          showToast('Запись обновлена');
+          resetAppointmentForm();
+        }
+      }
+    } catch {
+      showToast('Ошибка сохранения', 'error');
+    } finally {
+      setSavingAppointment(false);
+    }
+  };
+
+  const handleDeleteAppointment = async (id: number) => {
+    if (!confirm('Удалить эту запись?')) return;
+    try {
+      await deleteAppointment(id);
+      setAppointments(prev => prev.filter(a => a.id !== id));
+      showToast('Запись удалена');
+    } catch {
+      showToast('Ошибка удаления', 'error');
+    }
+  };
 
   const fetchLogs = async () => {
     setLoadingLogs(true);
@@ -322,6 +421,7 @@ export default function AdminDashboard({
         {[
           { key: 'doctors' as const, label: 'Врачи', icon: <Users size={16} /> },
           { key: 'procedures' as const, label: 'Услуги и процедуры', icon: <HeartHandshake size={16} /> },
+          { key: 'appointments' as const, label: 'Записи', icon: <Calendar size={16} /> },
           { key: 'settings' as const, label: 'Настройки клиники', icon: <SettingsIcon size={16} /> },
           { key: 'logs' as const, label: 'Журнал WhatsApp', icon: <MessageCircle size={16} /> },
         ].map(tab => (
@@ -571,6 +671,238 @@ export default function AdminDashboard({
           </div>
         </div>
       )}
+
+      {/* ─── TAB: Appointments ─── */}
+      {activeTab === 'appointments' && (
+        <div className="animate-fade-in">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h2>Записи ({appointments.length})</h2>
+          </div>
+
+          {/* ── Edit Form ── */}
+          {showAppointmentForm && editingAppointment && (
+            <div className="glass-panel" style={{ padding: '2rem', marginBottom: '1.5rem', borderColor: 'var(--color-accent)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h3>Редактировать запись</h3>
+                <button onClick={resetAppointmentForm} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleSaveAppointment}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+
+                  {/* Patient name */}
+                  <div className="input-group">
+                    <label className="input-label">ФИО пациента *</label>
+                    <input
+                      className="form-control" style={{ width: '100%' }} required
+                      value={appointmentForm.patientName}
+                      onChange={e => setAppointmentForm(prev => ({ ...prev, patientName: e.target.value }))}
+                      placeholder="Иванов Иван Иванович"
+                    />
+                  </div>
+
+                  {/* Phone */}
+                  <div className="input-group">
+                    <label className="input-label">Телефон *</label>
+                    <input
+                      type="tel" className="form-control" style={{ width: '100%' }} required
+                      value={appointmentForm.patientPhone}
+                      onChange={e => {
+                        const digits = e.target.value.replace(/\D/g, '');
+                        const normalized = digits.startsWith('7') ? digits.slice(0, 11) : `7${digits}`.slice(0, 11);
+                        setAppointmentForm(prev => ({ ...prev, patientPhone: `+${normalized}` }));
+                      }}
+                      placeholder="+77001234567"
+                    />
+                  </div>
+
+                  {/* Doctor */}
+                  <div className="input-group">
+                    <label className="input-label">Врач *</label>
+                    <select
+                      className="form-control" style={{ width: '100%' }} required
+                      value={appointmentForm.doctorId}
+                      onChange={e => setAppointmentForm(prev => ({ ...prev, doctorId: Number(e.target.value) }))}
+                    >
+                      <option value={0}>— Выберите врача —</option>
+                      {doctors.map(d => (
+                        <option key={d.id} value={d.id}>{d.name} — {d.specialization}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Procedure */}
+                  <div className="input-group">
+                    <label className="input-label">Процедура</label>
+                    <select
+                      className="form-control" style={{ width: '100%' }}
+                      value={appointmentForm.procedureId}
+                      onChange={e => setAppointmentForm(prev => ({ ...prev, procedureId: Number(e.target.value) }))}
+                    >
+                      <option value={0}>— Без процедуры —</option>
+                      {procedures.map(p => (
+                        <option key={p.id} value={p.id}>{p.name} — {p.price.toLocaleString('ru-RU')} ₸</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Date */}
+                  <div className="input-group">
+                    <label className="input-label">Дата *</label>
+                    <input
+                      type="date" className="form-control" style={{ width: '100%' }} required
+                      value={appointmentForm.date}
+                      onChange={e => setAppointmentForm(prev => ({ ...prev, date: e.target.value }))}
+                    />
+                  </div>
+
+                  {/* Time */}
+                  <div className="input-group">
+                    <label className="input-label">Время *</label>
+                    <input
+                      type="time" className="form-control" style={{ width: '100%' }} required
+                      value={appointmentForm.time}
+                      onChange={e => setAppointmentForm(prev => ({ ...prev, time: e.target.value }))}
+                    />
+                  </div>
+
+                  {/* Status */}
+                  <div className="input-group">
+                    <label className="input-label">Статус *</label>
+                    <select
+                      className="form-control" style={{ width: '100%' }} required
+                      value={appointmentForm.status}
+                      onChange={e => setAppointmentForm(prev => ({ ...prev, status: e.target.value }))}
+                    >
+                      <option value="PENDING">Ожидает</option>
+                      <option value="CONFIRMED">Подтверждён</option>
+                      <option value="COMPLETED">Завершён</option>
+                      <option value="CANCELLED">Отменён</option>
+                    </select>
+                  </div>
+
+                  {/* Price */}
+                  <div className="input-group">
+                    <label className="input-label">Цена (тенге)</label>
+                    <input
+                      type="number" min={0} step={100}
+                      className="form-control" style={{ width: '100%' }}
+                      value={appointmentForm.price || ''}
+                      onChange={e => setAppointmentForm(prev => ({ ...prev, price: Number(e.target.value) }))}
+                      placeholder="5000"
+                    />
+                  </div>
+
+                  {/* Complaint — full width */}
+                  <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+                    <label className="input-label">Жалоба</label>
+                    <textarea
+                      className="form-control" style={{ width: '100%', minHeight: '80px', resize: 'vertical' }}
+                      value={appointmentForm.complaint}
+                      onChange={e => setAppointmentForm(prev => ({ ...prev, complaint: e.target.value }))}
+                      placeholder="Опишите симптомы..."
+                    />
+                  </div>
+
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                  <button
+                    type="submit" disabled={savingAppointment}
+                    className={`btn ${savingAppointment ? 'btn-disabled' : 'btn-primary'}`}
+                  >
+                    <Save size={16} /> {savingAppointment ? 'Сохранение...' : 'Сохранить'}
+                  </button>
+                  <button type="button" onClick={resetAppointmentForm} className="btn btn-secondary">
+                    Отмена
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* ── Appointments List ── */}
+          {appointments.length === 0 ? (
+            <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
+              <Calendar size={48} style={{ color: 'var(--text-muted)', marginBottom: '1rem' }} />
+              <h3 style={{ color: 'var(--text-secondary)' }}>Нет записей</h3>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {appointments.map(appt => {
+                const doctor = doctors.find(d => d.id === appt.doctorId);
+                const procedure = procedures.find(p => p.id === appt.procedureId);
+                const statusColors: Record<string, string> = {
+                  PENDING: 'var(--color-warning)',
+                  CONFIRMED: 'var(--color-accent)',
+                  COMPLETED: 'var(--color-primary)',
+                  CANCELLED: 'var(--color-danger)',
+                };
+                const statusLabels: Record<string, string> = {
+                  PENDING: 'Ожидает', CONFIRMED: 'Подтверждён',
+                  COMPLETED: 'Завершён', CANCELLED: 'Отменён',
+                };
+                const statusBadge: Record<string, string> = {
+                  PENDING: 'badge-pending', CONFIRMED: 'badge-confirmed',
+                  COMPLETED: 'badge-completed', CANCELLED: 'badge-cancelled',
+                };
+                return (
+                  <div key={appt.id} className="glass-panel" style={{
+                    padding: '1.25rem 1.5rem',
+                    borderLeft: `3px solid ${statusColors[appt.status] || 'var(--border-color)'}`,
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        {/* Time + status */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+                          <Clock size={13} style={{ color: 'var(--color-accent)' }} />
+                          <span style={{ fontWeight: 700 }}>{appt.date} · {appt.time}</span>
+                          <span className={`badge ${statusBadge[appt.status]}`}>{statusLabels[appt.status]}</span>
+                        </div>
+                        {/* Patient */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
+                          <Users size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                          <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{appt.patientName}</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{appt.patientPhone}</span>
+                        </div>
+                        {/* Doctor + procedure */}
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                          {doctor && <span>{doctor.name} — {doctor.specialization}</span>}
+                          {procedure && <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{procedure.name} · {procedure.price.toLocaleString('ru-RU')} ₸</span>}
+                        </div>
+                        {appt.complaint && (
+                          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
+                            <strong>Жалоба:</strong> {appt.complaint}
+                          </p>
+                        )}
+                      </div>
+                      {/* Actions */}
+                      <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                        <button
+                          onClick={() => openEditAppointment(appt)}
+                          className="btn btn-secondary"
+                          style={{ padding: '0.45rem 0.8rem', fontSize: '0.82rem' }}
+                        >
+                          <Edit3 size={13} /> Изменить
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAppointment(appt.id)}
+                          className="btn btn-danger"
+                          style={{ padding: '0.45rem 0.8rem', fontSize: '0.82rem' }}
+                        >
+                          <Trash2 size={13} /> Удалить
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
 
       {/* ─── TAB: Procedures ─── */}
       {activeTab === 'procedures' && (

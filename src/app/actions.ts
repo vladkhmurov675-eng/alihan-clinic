@@ -415,6 +415,55 @@ export async function updateAppointmentStatus(appointmentId: number, status: str
   return { success: true, appointment: updated };
 }
 
+export async function getAppointments() {
+  return prisma.appointment.findMany({
+    orderBy: [
+      { date: 'desc' },
+      { time: 'asc' },
+    ],
+    include: { doctor: true, procedure: true },
+  });
+}
+
+export async function updateAppointment(appointmentId: number, data: {
+  patientName?: string;
+  patientPhone?: string;
+  date?: string;
+  time?: string;
+  status?: string;
+  doctorId?: number;
+  procedureId?: number;
+  complaint?: string;
+  price?: number;
+  filePath?: string;
+}) {
+  if (!(await isAdminLoggedIn())) throw new Error('Unauthorized');
+  try {
+    const updated = await prisma.appointment.update({
+      where: { id: appointmentId },
+      data,
+      include: { doctor: true, procedure: true },
+    });
+    return { success: true, appointment: updated };
+  } catch (error: any) {
+    console.error('Update appointment error:', error);
+    return { success: false, error: 'Произошла ошибка при обновлении записи' };
+  }
+}
+
+export async function deleteAppointment(appointmentId: number) {
+  if (!(await isAdminLoggedIn())) throw new Error('Unauthorized');
+  try {
+    const deleted = await prisma.appointment.delete({
+      where: { id: appointmentId },
+    });
+    return { success: true, appointment: deleted };
+  } catch (error: any) {
+    console.error('Delete appointment error:', error);
+    return { success: false, error: 'Произошла ошибка при удалении записи' };
+  }
+}
+
 // ─────────────────────────────────────────
 // WHATSAPP LOGS
 // ─────────────────────────────────────────

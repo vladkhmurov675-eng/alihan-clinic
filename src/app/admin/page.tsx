@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { isAdminLoggedIn, getDoctors, getSettings, getProcedures } from '../actions';
+import { isAdminLoggedIn, getDoctors, getSettings, getProcedures, getAppointments } from '../actions';
 import AdminDashboard from '../components/AdminDashboard';
 
 export const revalidate = 0;
@@ -18,12 +18,14 @@ export default async function AdminPage() {
 
   let doctors: any[] = [];
   let procedures: any[] = [];
+  let appointments: any[] = [];
   let settings: Record<string, string> = {};
   let dbError = false;
 
   try {
     doctors = await getDoctors();
     procedures = await getProcedures();
+    appointments = await getAppointments();
     settings = await getSettings();
   } catch (error) {
     console.error('Error fetching admin data:', error);
@@ -44,5 +46,5 @@ export default async function AdminPage() {
     );
   }
 
-  return <AdminDashboard doctors={doctors} procedures={procedures} settings={settings} />;
+  return <AdminDashboard doctors={doctors} procedures={procedures} appointments={appointments} settings={settings} />;
 }
