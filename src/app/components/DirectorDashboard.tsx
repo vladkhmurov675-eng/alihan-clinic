@@ -292,7 +292,7 @@ export default function DirectorDashboard({
         </div>
 
         {/* ── Bar + Pie row ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
 
           {/* Bar: by doctor */}
           <div className="card" style={{ padding: '1.5rem' }}>
@@ -360,7 +360,7 @@ export default function DirectorDashboard({
             <h3 style={{ fontSize: '1rem', marginBottom: '1.25rem', color: 'var(--color-primary)' }}>
               💉 По процедурам
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', alignItems: 'center' }}>
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
                   <Pie data={byProcedure} dataKey="value" nameKey="name"
@@ -394,7 +394,7 @@ export default function DirectorDashboard({
             </h3>
 
             {/* Filters */}
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="filter-bar" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <Filter size={14} style={{ color: 'var(--text-muted)' }} />
 
               <select className="form-control" style={{ width: 'auto', padding: '0.4rem 0.75rem', fontSize: '0.82rem' }}
@@ -430,7 +430,7 @@ export default function DirectorDashboard({
               Нет записей по выбранным фильтрам
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div className="table-scroll" style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--border-color)' }}>

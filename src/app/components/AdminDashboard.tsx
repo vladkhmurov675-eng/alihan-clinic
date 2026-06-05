@@ -314,7 +314,7 @@ export default function AdminDashboard({
       </div>
 
       {/* Tabs */}
-      <div style={{
+      <div className="tab-bar" style={{
         display: 'flex', gap: '0.25rem', marginBottom: '1.5rem',
         background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '0.25rem',
         border: '1px solid var(--border-color)',
@@ -372,7 +372,7 @@ export default function AdminDashboard({
                 </button>
               </div>
               <form onSubmit={handleSaveDoctor}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
                   <div className="input-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="input-label">ФИО врача *</label>
                     <input
@@ -599,7 +599,7 @@ export default function AdminDashboard({
                 </button>
               </div>
               <form onSubmit={handleSaveProcedure}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
                   {/* Name — full width */}
                   <div className="input-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="input-label">Название услуги *</label>
@@ -778,7 +778,7 @@ export default function AdminDashboard({
               </p>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div className="table-scroll" style={{ overflowX: 'auto' }}>
               <table style={{
                 width: '100%', borderCollapse: 'separate', borderSpacing: '0 0.5rem',
               }}>

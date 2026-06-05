@@ -48,7 +48,7 @@ export default function AboutPage() {
       <section style={{ background: "#fff", borderBottom: "1px solid var(--border-color)" }}>
         <div style={{
           maxWidth: 1100, margin: "0 auto", padding: "2.5rem 1.5rem",
-          display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem",
+          display: "grid", gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: "1rem",
         }}>
           {STATS.map((s) => (
             <div key={s.label} style={{ textAlign: "center" }}>
@@ -57,11 +57,12 @@ export default function AboutPage() {
             </div>
           ))}
         </div>
-      </section>
+      </section >
 
       {/* Story */}
-      <section style={{ maxWidth: 1100, margin: "0 auto", padding: "4rem 1.5rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3rem", alignItems: "center" }}>
+      < section style={{ maxWidth: 1100, margin: "0 auto", padding: "4rem 1.5rem" }
+      }>
+        <div style={{ display: "grid", gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: "3rem", alignItems: "center" }}>
           <div>
             <div className="section-label">Наша история</div>
             <h2 style={{ fontSize: "1.8rem", marginBottom: "1.25rem" }}>Начали с малого — выросли с доверием</h2>
@@ -86,10 +87,11 @@ export default function AboutPage() {
             </p>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* Values */}
-      <section style={{ background: "#fff", borderTop: "1px solid var(--border-color)", borderBottom: "1px solid var(--border-color)" }}>
+      < section style={{ background: "#fff", borderTop: "1px solid var(--border-color)", borderBottom: "1px solid var(--border-color)" }
+      }>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "4rem 1.5rem" }}>
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
             <div className="section-label">Принципы</div>
@@ -105,10 +107,10 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
-      </section>
+      </section >
 
       {/* CTA */}
-      <section style={{ padding: "4rem 1.5rem", textAlign: "center" }}>
+      < section style={{ padding: "4rem 1.5rem", textAlign: "center" }}>
         <div style={{ maxWidth: 600, margin: "0 auto" }}>
           <h2 style={{ fontSize: "1.8rem", marginBottom: "1rem" }}>Запишитесь на приём сегодня</h2>
           <p style={{ color: "var(--text-secondary)", marginBottom: "1.5rem", lineHeight: 1.6 }}>
@@ -118,7 +120,7 @@ export default function AboutPage() {
             Онлайн-запись →
           </a>
         </div>
-      </section>
-    </div>
+      </section >
+    </div >
   );
 }

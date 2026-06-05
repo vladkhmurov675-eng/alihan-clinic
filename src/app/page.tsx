@@ -24,7 +24,7 @@ export default async function Home() {
         margin: '0 auto',
         padding: 'clamp(3rem, 8vw, 6rem) 1.5rem',
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
         gap: '3rem',
         alignItems: 'center',
       }}>

@@ -10,7 +10,6 @@ function getDoctorColor(spec: string) {
   if (spec.includes('Терап')) return '#1a4a6b';
   if (spec.includes('Невро')) return '#2d7a5f';
   if (spec.includes('Процедур')) return '#7a5c2e';
-
   return '#4f46e5';
 }
 
@@ -55,45 +54,49 @@ export default async function DoctorsPage() {
       {/* Doctors */}
       <section style={{ maxWidth: 1000, margin: "0 auto", padding: "3rem 1.5rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
         {doctors.map((d) => (
-          <div key={d.id} className="card" style={{ padding: "2rem", display: "flex", gap: "2rem", alignItems: "flex-start" }}>
-            <Initials name={d.name} color={getDoctorColor(d.specialization)} />
+          <div key={d.id} className="card" style={{ padding: "2rem" }}>
+            {/* doctor-card-inner stacks on mobile via CSS */}
+            <div className="doctor-card-inner" style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
+              <Initials name={d.name} color={getDoctorColor(d.specialization)} />
 
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", marginBottom: "0.25rem" }}>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: 700 }}>{d.name}</h2>
-                <span style={{
-                  background: "var(--color-primary-glow)", color: "var(--color-primary)",
-                  border: "1px solid rgba(26,74,107,0.2)",
-                  fontSize: "0.75rem", fontWeight: 700, padding: "2px 10px", borderRadius: 20,
-                }}>{d.specialization}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", marginBottom: "0.25rem" }}>
+                  <h2 style={{ fontSize: "1.2rem", fontWeight: 700 }}>{d.name}</h2>
+                  <span style={{
+                    background: "var(--color-primary-glow)", color: "var(--color-primary)",
+                    border: "1px solid rgba(26,74,107,0.2)",
+                    fontSize: "0.75rem", fontWeight: 700, padding: "2px 10px", borderRadius: 20,
+                    whiteSpace: "nowrap",
+                  }}>{d.specialization}</span>
+                </div>
+
+                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "0.75rem" }}>
+                  {d.education} · {d.experienceYears}
+                </div>
+
+                <p style={{ fontSize: "0.95rem", lineHeight: 1.7, color: "var(--text-secondary)", marginBottom: "1rem" }}>
+                  {d.description}
+                </p>
+
+                <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
+                  {[
+                    { icon: "📅", text: d.workStartTime },
+                    { icon: "⏱️", text: `Приём: ${d.slotDuration}` },
+                  ].map(({ icon, text }) => (
+                    <div key={text} style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      background: "var(--bg-secondary)", borderRadius: 8,
+                      padding: "6px 12px", fontSize: "0.85rem", color: "var(--text-secondary)",
+                    }}>
+                      <span>{icon}</span>{text}
+                    </div>
+                  ))}
+                </div>
+
+                <Link href={`/booking?doctorId=${d.id}`} className="btn btn-primary btn-full-mobile" style={{ fontSize: "0.9rem", padding: "0.6rem 1.4rem" }}>
+                  Записаться к врачу →
+                </Link>
               </div>
-
-              <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "0.75rem" }}>
-                {d.education} · {d.experienceYears}
-              </div>
-
-              <p style={{ fontSize: "0.95rem", lineHeight: 1.7, color: "var(--text-secondary)", marginBottom: "1rem" }}>
-                {d.description}
-              </p>
-
-              <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
-                {[
-                  { icon: "📅", text: d.workStartTime },
-                  { icon: "⏱️", text: `Приём: ${d.slotDuration}` },
-                ].map(({ icon, text }) => (
-                  <div key={text} style={{
-                    display: "flex", alignItems: "center", gap: 6,
-                    background: "var(--bg-secondary)", borderRadius: 8,
-                    padding: "6px 12px", fontSize: "0.85rem", color: "var(--text-secondary)",
-                  }}>
-                    <span>{icon}</span>{text}
-                  </div>
-                ))}
-              </div>
-
-              <Link href={`/booking?doctorId=${d.id}`} className="btn btn-primary" style={{ fontSize: "0.9rem", padding: "0.6rem 1.4rem" }}>
-                Записаться к врачу →
-              </Link>
             </div>
           </div>
         ))}

@@ -4,6 +4,7 @@ import { prisma } from '../db';
 import { cookies } from 'next/headers';
 import fs from 'fs/promises';
 import path from 'path';
+import { sendWhatsAppMessage } from '@/app/lib/whatsapp';
 
 // ─────────────────────────────────────────
 // SESSION HELPERS
@@ -329,6 +330,8 @@ export async function bookAppointment(
       include: { doctor: true, procedure: true },
     });
 
+    await sendWhatsAppNotification(appointment)
+
     const clinicSetting = await prisma.setting.findUnique({ where: { key: 'clinic_name' } });
     const clinicName = clinicSetting?.value || 'Алихан';
 
@@ -351,6 +354,13 @@ export async function bookAppointment(
     return { success: false, error: 'Произошла ошибка при бронировании' };
   }
 }
+
+export async function sendWhatsAppNotification(appointment: any) {
+  const message = `Здравствуйте, ${appointment.patientName}! Вы записаны к врачу ${appointment.doctor.name} на ${appointment.date} в ${appointment.time}. Клиника "Алихан".`;
+
+  await sendWhatsAppMessage(appointment.patientPhone, message);
+}
+
 export async function getDoctorAppointments(date?: string) {
   const doctorId = await getSessionDoctorId();
 
@@ -417,7 +427,7 @@ export async function getWhatsAppLogs() {
 }
 
 // ─────────────────────────────────────────
-// DIRECTOR STATS — add this to actions.ts
+// DIRECTOR STATS
 // ─────────────────────────────────────────
 
 export async function getDirectorStats(from: string, to: string) {

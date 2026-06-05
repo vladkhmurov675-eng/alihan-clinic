@@ -272,7 +272,7 @@ export default function BookingPage() {
                         )}
 
                         {/* ── Row 2: Date + Time side by side ── */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                             <div className="input-group" style={{ marginBottom: 0 }}>
                                 <label className="input-label">Дата *</label>
                                 <input

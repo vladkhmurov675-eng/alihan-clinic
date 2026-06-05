@@ -319,3 +319,115 @@ h6 {
 ::-webkit-scrollbar-thumb:hover {
   background: #6a9a6a;
 }
+/* ── Mobile responsive ── */
+@media (max-width: 768px) {
+  /* Nav */
+  .desktop-nav { display: none !important; }
+  .mobile-menu-btn { display: flex !important; }
+
+  /* Container */
+  .container {
+    padding: 1.25rem 1rem;
+  }
+
+  /* Typography scale-down */
+  h1 { font-size: clamp(1.6rem, 6vw, 2.2rem) !important; }
+  h2 { font-size: clamp(1.3rem, 5vw, 1.8rem) !important; }
+
+  /* Force single column on all 2-col grids */
+  [style*="gridTemplateColumns: '1fr 1fr'"],
+  [style*='gridTemplateColumns: "1fr 1fr"'],
+  [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Booking date+time grid */
+  [style*="gridTemplateColumns: '1fr 1fr'"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Doctor cards: stack avatar above text */
+  .doctor-card-inner {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  /* Stat row on homepage */
+  .hero-stats {
+    gap: 1.25rem !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* Services 2-col grid */
+  .services-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tabs: allow horizontal scroll */
+  .tab-bar {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab-bar button {
+    white-space: nowrap;
+    flex: 0 0 auto !important;
+  }
+
+  /* Appointment cards: stack buttons */
+  .appt-card-actions {
+    flex-direction: column !important;
+    width: 100%;
+  }
+  .appt-card-actions button {
+    width: 100% !important;
+  }
+
+  /* Filter bar: wrap */
+  .filter-bar {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+  .filter-bar select,
+  .filter-bar input {
+    width: 100% !important;
+    flex: 1 1 140px !important;
+  }
+
+  /* Tables: horizontal scroll */
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Charts: allow horizontal scroll (already handled inline) */
+  .chart-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Buttons full-width where appropriate */
+  .btn-full-mobile {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Padding reductions */
+  .card, .glass-panel {
+    padding: 1rem !important;
+  }
+
+  /* Hide non-critical decorative elements */
+  .hide-mobile { display: none !important; }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 1rem 0.75rem;
+  }
+
+  /* Make stat badges stack */
+  .hero-stats {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
