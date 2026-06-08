@@ -194,7 +194,7 @@ export async function updateDoctorSettings(data: {
 export async function getSettings() {
   const settings = await prisma.setting.findMany();
   const map: Record<string, string> = {};
-  settings.forEach(s => { map[s.key] = s.value; });
+  settings.forEach((s: { key: string; value: string }) => { map[s.key] = s.value; });
   return map;
 }
 
