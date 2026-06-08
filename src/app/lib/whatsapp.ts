@@ -1,12 +1,4 @@
-import 'dotenv/config';
-import { PrismaPg } from '@prisma/adapter-pg';
-import pg from 'pg';
-import Prisma from '@prisma/client';
-
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new Prisma.PrismaClient({ adapter });
-
+import { prisma } from '@/db';
 // ─────────────────────────────────────────
 // SEND A SINGLE WHATSAPP MESSAGE
 // ─────────────────────────────────────────
@@ -108,27 +100,5 @@ export async function sendTomorrowSchedules(): Promise<void> {
             },
         });
     }
-
-    // Clean up connection when called from a script (not from Next.js)
-    if (process.env.STANDALONE === 'true') {
-        await prisma.$disconnect();
-        await pool.end();
-    }
 }
 
-// ─────────────────────────────────────────
-// STANDALONE — run directly with tsx
-// npx tsx src/whatsapp.ts
-// ─────────────────────────────────────────
-
-if (process.env.STANDALONE === 'true') {
-    sendTomorrowSchedules()
-        .then(() => {
-            console.log('Done.');
-            process.exit(0);
-        })
-        .catch(err => {
-            console.error('Fatal error:', err);
-            process.exit(1);
-        });
-}
