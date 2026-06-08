@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { getDoctors, getOccupiedSlots, bookAppointment, getProceduresByDoctor } from '../actions';
 import { User, Phone, Clipboard, FileText, CheckCircle } from 'lucide-react';
@@ -45,10 +46,10 @@ function isDateDisabled(dateStr: string, doctor: Doctor): boolean {
     return false;
 }
 
-// Today's date in YYYY-MM-DD for the min attribute
 const todayStr = new Date().toISOString().split('T')[0];
 
-export default function BookingPage() {
+// ── Inner component that uses useSearchParams ──
+function BookingForm() {
     const [doctors, setDoctors] = useState<Doctor[]>([]);
     const [doctorId, setDoctorId] = useState<number | ''>('');
     const [date, setDate] = useState('');
@@ -63,26 +64,21 @@ export default function BookingPage() {
     const [patientPhone, setPatientPhone] = useState('+7');
     const [complaint, setComplaint] = useState('');
     const [file, setFile] = useState<File | null>(null);
-
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState<any>(null);
+
     const searchParams = useSearchParams();
 
     useEffect(() => {
         const id = searchParams.get('doctorId');
-
-        if (id) {
-            setDoctorId(Number(id));
-        }
+        if (id) setDoctorId(Number(id));
     }, [searchParams]);
 
-    // Load doctors on mount
     useEffect(() => {
         getDoctors().then(d => setDoctors(d as Doctor[]));
     }, []);
 
-    // Load slots when doctor + date change
     useEffect(() => {
         setTime('');
         setSlots([]);
@@ -106,12 +102,10 @@ export default function BookingPage() {
         });
     }, [doctorId, date, doctors]);
 
-    // Load procedures when doctor changes
     useEffect(() => {
         setProcedures([]);
         setProcedureId('');
         if (!doctorId) return;
-
         getProceduresByDoctor(Number(doctorId)).then(procs => {
             setProcedures(procs as Procedure[]);
         });
@@ -157,7 +151,6 @@ export default function BookingPage() {
         }
     }
 
-    // ── Success screen ──
     if (success) {
         return (
             <div style={{ background: 'var(--bg-primary)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
@@ -208,11 +201,8 @@ export default function BookingPage() {
         );
     }
 
-    // ── Main form ──
     return (
         <div style={{ background: 'var(--bg-primary)', minHeight: '100vh' }}>
-
-            {/* Page header */}
             <section style={{
                 background: 'linear-gradient(135deg, var(--color-primary), #1a4a1a)',
                 padding: '2.5rem 1.5rem',
@@ -227,13 +217,10 @@ export default function BookingPage() {
                 </p>
             </section>
 
-            {/* Card */}
             <div style={{ maxWidth: 620, margin: '0 auto', padding: '2.5rem 1.5rem 4rem' }}>
                 <div className="card animate-fade-in" style={{ padding: '2rem' }}>
-
                     <form onSubmit={handleSubmit}>
 
-                        {/* ── Row 1: Doctor ── */}
                         <div className="input-group">
                             <label className="input-label">Специалист *</label>
                             <select
@@ -271,7 +258,6 @@ export default function BookingPage() {
                             </div>
                         )}
 
-                        {/* ── Row 2: Date + Time side by side ── */}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                             <div className="input-group" style={{ marginBottom: 0 }}>
                                 <label className="input-label">Дата *</label>
@@ -310,7 +296,6 @@ export default function BookingPage() {
                             </div>
                         </div>
 
-                        {/* Doctor schedule hint */}
                         {doctorId && (() => {
                             const doc = doctors.find(d => d.id === Number(doctorId));
                             return doc ? (
@@ -321,11 +306,8 @@ export default function BookingPage() {
                         })()}
 
                         <div style={{ height: '0.25rem' }} />
-
-                        {/* Divider */}
                         <div style={{ borderTop: '1px solid var(--border-color)', margin: '1rem 0 1.25rem' }} />
 
-                        {/* ── Row 3: Name ── */}
                         <div className="input-group">
                             <label className="input-label">ФИО пациента *</label>
                             <div style={{ position: 'relative' }}>
@@ -341,7 +323,6 @@ export default function BookingPage() {
                             </div>
                         </div>
 
-                        {/* ── Row 4: Phone ── */}
                         <div className="input-group">
                             <label className="input-label">Номер телефона *</label>
                             <div style={{ position: 'relative' }}>
@@ -350,28 +331,19 @@ export default function BookingPage() {
                                     type="tel"
                                     className="form-control"
                                     style={{ width: '100%', paddingLeft: '2.25rem' }}
-                                    placeholder="+7701234567"
+                                    placeholder="+77012345678"
                                     value={patientPhone}
                                     onChange={e => {
-
-                                        let value = e.target.value;
-
-                                        // keep only digits
-                                        const digits = value.replace(/\D/g, '');
-
-                                        // Kazakhstan number: 7 + 10 digits
+                                        const digits = e.target.value.replace(/\D/g, '');
                                         const normalized = digits.startsWith('7')
                                             ? digits.slice(0, 11)
                                             : `7${digits}`.slice(0, 11);
-
                                         setPatientPhone(`+${normalized}`);
-
                                     }}
                                 />
                             </div>
                         </div>
 
-                        {/* ── Row 5: Complaint ── */}
                         <div className="input-group">
                             <label className="input-label">Жалоба / симптомы</label>
                             <div style={{ position: 'relative' }}>
@@ -387,7 +359,6 @@ export default function BookingPage() {
                             </div>
                         </div>
 
-                        {/* ── Row 6: File upload ── */}
                         <div className="input-group">
                             <label className="input-label">Прикрепить файл (МРТ, УЗИ, анализы)</label>
                             <label style={{
@@ -408,7 +379,6 @@ export default function BookingPage() {
                             </label>
                         </div>
 
-                        {/* Error */}
                         {error && (
                             <div style={{
                                 background: 'var(--color-danger-glow)',
@@ -422,7 +392,6 @@ export default function BookingPage() {
                             </div>
                         )}
 
-                        {/* Submit */}
                         <button
                             type="submit"
                             disabled={submitting}
@@ -439,5 +408,21 @@ export default function BookingPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+// ── Outer component wraps in Suspense ──
+export default function BookingPage() {
+    return (
+        <Suspense fallback={
+            <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                minHeight: '60vh', color: 'var(--text-muted)', fontSize: '1rem',
+            }}>
+                Загрузка...
+            </div>
+        }>
+            <BookingForm />
+        </Suspense>
     );
 }
