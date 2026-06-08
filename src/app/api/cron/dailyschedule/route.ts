@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { sendTomorrowSchedules } from '@/app/lib/whatsapp';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization');
@@ -10,6 +9,8 @@ export async function GET(request: Request) {
     }
 
     try {
+        // Lazy import — only runs at request time, never at build time
+        const { sendTomorrowSchedules } = await import('@/app/lib/whatsapp');
         await sendTomorrowSchedules();
         return NextResponse.json({ success: true });
     } catch (err: any) {
