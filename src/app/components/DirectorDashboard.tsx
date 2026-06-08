@@ -341,13 +341,13 @@ export default function DirectorDashboard({
                 <PieChart>
                   <Pie data={byStatus} dataKey="value" nameKey="name"
                     cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) =>
-                      `${name} ${(percent * 100).toFixed(0)}%`
+                      `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
                     } labelLine={true}>
                     {byStatus.map((entry, i) => (
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v: number) => [v, 'Записей']} />
+                  <Tooltip formatter={(v) => [v ?? 0, 'Записей']} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -369,7 +369,7 @@ export default function DirectorDashboard({
                       <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v: number) => [v, 'Записей']} />
+                  <Tooltip formatter={(v) => [v ?? 0, 'Записей']} />
                 </PieChart>
               </ResponsiveContainer>
               {/* Legend */}

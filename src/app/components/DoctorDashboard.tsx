@@ -208,9 +208,9 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
           weekends: doc.weekends,
           disabledDates: doc.disabledDates,
           password: doc.password,
-          education: doc.education,
-          experienceYears: doc.experienceYears,
-          description: doc.description,
+          education: doc.education ?? '',
+          experienceYears: doc.experienceYears ?? 0,
+          description: doc.description ?? '',
         });
       }
     } catch (err) {
@@ -346,7 +346,7 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
       </div>
 
       {/* Tabs */}
-      <div className="tab-bar" style={{
+      <div style={{
         display: 'flex', gap: '0.25rem', marginBottom: '1.5rem',
         background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '0.25rem',
         border: '1px solid var(--border-color)',
@@ -381,7 +381,7 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
       {activeTab === 'appointments' && (
         <div className="animate-fade-in">
           {/* Date selector */}
-          <div className="filter-bar" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
 
             {/* Mode selector */}
             <select
@@ -556,7 +556,7 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
                     </div>
 
                     {/* Right side: action buttons */}
-                    <div className="appt-card-actions" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '150px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '150px' }}>
                       {appt.status === 'PENDING' && (
                         <>
                           <button
@@ -613,7 +613,7 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
           <div className="glass-panel" style={{ padding: '2rem', maxWidth: '650px' }}>
             <h3 style={{ marginBottom: '1.5rem' }}>Настройки профиля</h3>
             <form onSubmit={handleSaveSettings}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="input-group" style={{ gridColumn: '1 / -1' }}>
                   <label className="input-label">ФИО</label>
                   <input

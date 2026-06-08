@@ -5,13 +5,13 @@ import Link from 'next/link';
 import NavBar from './components/NavBar';
 
 const outfit = Outfit({
-  subsets: ['latin', 'cyrillic'],
+  subsets: ['latin', 'latin-ext'],
   variable: '--font-outfit',
   weight: ['300', '400', '500', '600', '700', '800'],
 });
 
 const inter = Inter({
-  subsets: ['latin', 'cyrillic'],
+  subsets: ['latin', 'latin-ext'],
   variable: '--font-inter',
   weight: ['300', '400', '500', '600', '700'],
 });
@@ -22,13 +22,13 @@ export const metadata: Metadata = {
 };
 
 const PUBLIC_NAV = [
-  { label: 'Главная',             href: '/' },
-  { label: 'О клинике',           href: '/about' },
-  { label: 'Врачи',               href: '/doctors' },
-  { label: 'Услуги',              href: '/services' },
+  { label: 'Главная', href: '/' },
+  { label: 'О клинике', href: '/about' },
+  { label: 'Врачи', href: '/doctors' },
+  { label: 'Услуги', href: '/services' },
   { label: 'Процедурный кабинет', href: '/procedures' },
-  { label: 'Онлайн-запись',       href: '/booking' },
-  { label: 'Контакты',            href: '/contacts' },
+  { label: 'Онлайн-запись', href: '/booking' },
+  { label: 'Контакты', href: '/contacts' },
 ];
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
