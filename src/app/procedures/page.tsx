@@ -66,7 +66,7 @@ export default async function ProceduresPage() {
                 <span style={{ textAlign: "right" }}>Цена</span>
               </div>
 
-              {procedures.filter(p => p.doctorId === 10).map((p, i) => (
+              {procedures.filter(p => p.doctorId === 3).map((p, i) => (
                 <div key={p.name} style={{
                   display: "grid", gridTemplateColumns: "1fr 120px 120px",
                   padding: "0.9rem 1.25rem",
