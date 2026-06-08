@@ -1,7 +1,7 @@
 {
     "crons": [
         {
-            "path": "src/app/api/cron/daily-schedule",
+            "path": "/api/cron/daily-schedule",
             "schedule": "* * * * *"
         }
     ]
