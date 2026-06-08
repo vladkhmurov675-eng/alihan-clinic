@@ -114,10 +114,10 @@ export default function NavBar() {
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
           <span style={{
             width: 38, height: 38, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #2d6a2d, #4a9e4a)',
+            background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', fontWeight: 800, fontSize: '1.1rem',
-            boxShadow: '0 2px 10px rgba(45,106,45,0.25)',
+            boxShadow: '0 2px 10px rgba(0,175,190,0.25)',
             flexShrink: 0,
           }}>А</span>
           <span style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>

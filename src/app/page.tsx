@@ -127,7 +127,7 @@ export default async function Home() {
             }}>
               <div style={{
                 width: 48, height: 48, borderRadius: '50%',
-                background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
+                background: 'linear-gradient(120deg, var(--color-primary), var(--color-accent))',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: '#fff', fontWeight: 800, fontSize: '1.2rem',
                 flexShrink: 0,

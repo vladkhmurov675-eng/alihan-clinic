@@ -12,13 +12,13 @@
   --text-muted: #7a9a7a;
 
   /* Dark forest green — primary */
-  --color-primary: #2d6a2d;
-  --color-primary-hover: #245224;
+  --color-primary: #00afbe ;
+  --color-primary-hover: #007f8a;
   --color-primary-glow: rgba(45, 106, 45, 0.12);
 
   /* Soft medium green — accent */
-  --color-accent: #4a9e4a;
-  --color-accent-hover: #3d863d;
+  --color-accent: #4a939e;
+  --color-accent-hover: #3d8286;
   --color-accent-glow: rgba(74, 158, 74, 0.12);
 
   /* Warm gold — highlight */
