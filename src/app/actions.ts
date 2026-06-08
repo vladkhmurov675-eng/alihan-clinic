@@ -1,4 +1,4 @@
-'use server';
+import 'server-only';
 import bcrypt from 'bcrypt';
 import { prisma } from '../db';
 import { cookies } from 'next/headers';

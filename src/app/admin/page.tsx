@@ -9,6 +9,9 @@ export const metadata = {
   description: 'Административная панель клиники Алихан.',
 };
 
+export const dynamic = 'force-dynamic';
+
+
 export default async function AdminPage() {
   // Auth check — redirect to login if not admin
   const isAdmin = await isAdminLoggedIn();
