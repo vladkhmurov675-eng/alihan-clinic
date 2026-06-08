@@ -12,12 +12,24 @@ async function main() {
   console.log('Seeding database...');
 
   // ── Clean existing data (order matters due to foreign keys) ──
-  await prisma.appointment.deleteMany({});
-  await prisma.procedure.deleteMany({});
-  await prisma.doctor.deleteMany({});
-  await prisma.admin.deleteMany({});
-  await prisma.whatsAppLog.deleteMany({});
-  await prisma.setting.deleteMany({});
+  if (prisma.appointment !== undefined) {
+    await prisma.appointment.deleteMany({});
+  }
+  if (prisma.procedure !== undefined) {
+    await prisma.procedure.deleteMany({});
+  }
+  if (prisma.doctor !== undefined) {
+    await prisma.doctor.deleteMany({});
+  }
+  if (prisma.admin !== undefined) {
+    await prisma.admin.deleteMany({});
+  }
+  if (prisma.whatsAppLog !== undefined) {
+    await prisma.whatsAppLog.deleteMany({});
+  }
+  if (prisma.setting !== undefined) {
+    await prisma.setting.deleteMany({});
+  }
 
   // ── Admins ──
   const adminPassword = await bcrypt.hash('ClinicAdmin2025!', 10);
