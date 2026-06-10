@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { isAdminLoggedIn, getSessionRole, getDoctors, getProcedures, getDirectorStats } from '../actions';
+import { getSessionRole, getDoctors, getProcedures, getDirectorStats } from '../actions';
 import DirectorDashboard from '../components/DirectorDashboard';
 
 export const revalidate = 0;
@@ -36,9 +36,9 @@ export default async function DirectorPage() {
 
   return (
     <DirectorDashboard
-      initialAppointments={appointments as any[]}
-      doctors={doctors as any[]}
-      procedures={procedures as any[]}
+      initialAppointments={appointments as Array<Record<string, any>>}
+      doctors={doctors as Array<Record<string, any>>}
+      procedures={procedures as Array<Record<string, any>>}
       initialFrom={from}
       initialTo={to}
     />

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
+export async function GET() {
     // const authHeader = request.headers.get('authorization');
     // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     //     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -13,8 +13,8 @@ export async function GET(request: Request) {
         const { sendTomorrowSchedules } = await import('@/app/lib/whatsapp');
         await sendTomorrowSchedules();
         return NextResponse.json({ success: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('Cron error:', err);
-        return NextResponse.json({ error: err.message }, { status: 500 });
+        return NextResponse.json({ error: err instanceof Error ? err.message : 'Unknown error' }, { status: 500 });
     }
 }

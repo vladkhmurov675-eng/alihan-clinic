@@ -71,7 +71,7 @@ export default function NavBar() {
                 display: 'flex', alignItems: 'center', gap: 5,
                 background: meta.bg, color: meta.color,
                 padding: '2px 10px', borderRadius: 9999,
-                fontSize: '1 rem', fontWeight: 700,
+                fontSize: '0.85rem', fontWeight: 700,
                 letterSpacing: '0.04em', textDecoration: 'none',
                 transition: 'opacity 0.15s',
               }}>
@@ -82,7 +82,7 @@ export default function NavBar() {
                 display: 'flex', alignItems: 'center', gap: 4,
                 background: 'none', border: 'none', cursor: 'pointer',
                 color: 'rgba(255,255,255,0.7)',
-                fontSize: '1 rem', fontWeight: 700,
+                fontSize: '0.85rem', fontWeight: 700,
                 letterSpacing: '0.04em', textTransform: 'uppercase',
                 padding: 0,
               }}>
@@ -93,7 +93,7 @@ export default function NavBar() {
             <Link href="/login" style={{
               display: 'flex', alignItems: 'center', gap: 5,
               color: 'rgba(255,255,255,0.8)',
-              fontSize: '1 rem', fontWeight: 600,
+              fontSize: '0.85rem', fontWeight: 600,
               letterSpacing: '0.05em', textTransform: 'uppercase',
               textDecoration: 'none',
             }}>

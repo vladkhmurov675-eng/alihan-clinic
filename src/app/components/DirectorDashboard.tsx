@@ -41,7 +41,7 @@ function fmtShort(n: number) {
 }
 
 // Custom tooltip
-function ChartTooltip({ active, payload, label }: any) {
+function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
     <div style={{
@@ -50,7 +50,7 @@ function ChartTooltip({ active, payload, label }: any) {
       boxShadow: 'var(--shadow-md)', fontSize: '0.85rem',
     }}>
       <p style={{ fontWeight: 700, marginBottom: 4 }}>{label}</p>
-      {payload.map((p: any) => (
+      {payload.map((p) => (
         <p key={p.name} style={{ color: p.color }}>
           {p.name}: <strong>{typeof p.value === 'number' && p.name.includes('₸')
             ? fmt(p.value) : p.value}</strong>

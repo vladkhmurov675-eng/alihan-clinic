@@ -8,13 +8,12 @@ import {
   updateAppointmentStatus,
   updateDoctorSettings,
   getWhatsAppLogs,
-  getDoctorById,
   getCurrentDoctor,
 } from '../actions';
 import {
-  Lock, LogOut, Calendar, Clock, User, Phone,
+  LogOut, Calendar, Clock, User, Phone,
   CheckCircle, XCircle, FileText, Settings,
-  MessageCircle, ChevronDown, Activity, ClipboardList
+  MessageCircle, Activity, ClipboardList
 } from 'lucide-react';
 
 interface Doctor {
@@ -56,7 +55,7 @@ interface WhatsAppLogEntry {
   status: string;
 }
 
-export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
+export default function DoctorDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -67,10 +66,6 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
   const [activeTab, setActiveTab] = useState<'appointments' | 'settings' | 'logs'>('appointments');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  });
   const [dateFilter, setDateFilter] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'time' | 'status'>('date');
   const [filterMode, setFilterMode] = useState<'all' | 'date' | 'month' | 'year'>('date');
@@ -388,7 +383,7 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
               className="form-control"
               style={{ width: 'auto' }}
               value={filterMode}
-              onChange={e => setFilterMode(e.target.value as any)}
+              onChange={e => setFilterMode(e.target.value as 'all' | 'date' | 'month' | 'year')}
             >
               <option value="all">Все записи</option>
               <option value="date">По дате</option>
@@ -482,7 +477,7 @@ export default function DoctorDashboard({ doctors }: { doctors: Doctor[] }) {
             <select
               className="form-control"
               value={sortBy}
-              onChange={e => setSortBy(e.target.value as any)}
+              onChange={e => setSortBy(e.target.value as 'date' | 'time' | 'status')}
               style={{ width: 'auto' }}
             >
               <option value="date">Сортировать по дате</option>

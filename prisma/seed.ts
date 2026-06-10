@@ -128,7 +128,7 @@ async function main() {
   const primaryNeurologistProc = await prisma.procedure.create({
     data: { doctorId: neurologist.id, name: 'Прием невропатолога (первичный)', duration: 30, price: 7000 }
   });
-  const secondaryNeurologistProc = await prisma.procedure.create({
+  await prisma.procedure.create({
     data: { doctorId: neurologist.id, name: 'Прием невропатолога (повторный)', duration: 20, price: 5000 }
   });
 

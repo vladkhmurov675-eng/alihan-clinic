@@ -3,33 +3,48 @@ import { isAdminLoggedIn, getDoctors, getSettings, getProcedures, getAppointment
 import AdminDashboard from '../components/AdminDashboard';
 
 export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'Панель администратора | Клиника Алихан',
   description: 'Административная панель клиники Алихан.',
 };
 
-export const dynamic = 'force-dynamic';
+interface Doctor {
+  id: number; name: string; phone: string; specialization: string;
+  avatar: string | null; slotDuration: number; workStartTime: string;
+  workEndTime: string; weekends: string; disabledDates: string;
+  password: string; education: string | null; experienceYears: number | null;
+  description: string | null; createdAt: Date;
+}
 
+interface Procedure {
+  id: number; name: string; doctorId: number; duration: number; price: number;
+}
+
+interface Appointment {
+  id: number; doctorId: number; patientName: string; patientPhone: string;
+  complaint: string; date: string; time: string; filePath: string | null;
+  status: string; price: number | null; procedureId: number | null; createdAt: Date;
+  doctor: { id: number; name: string; specialization: string };
+  procedure: { id: number; name: string; price: number } | null;
+}
 
 export default async function AdminPage() {
-  // Auth check — redirect to login if not admin
   const isAdmin = await isAdminLoggedIn();
-  if (!isAdmin) {
-    redirect('/login');
-  }
+  if (!isAdmin) redirect('/login');
 
-  let doctors: any[] = [];
-  let procedures: any[] = [];
-  let appointments: any[] = [];
+  let doctors: Doctor[] = [];
+  let procedures: Procedure[] = [];
+  let appointments: Appointment[] = [];
   let settings: Record<string, string> = {};
   let dbError = false;
 
   try {
-    doctors = await getDoctors();
-    procedures = await getProcedures();
-    appointments = await getAppointments();
-    settings = await getSettings();
+    doctors     = (await getDoctors())     as Doctor[];
+    procedures  = (await getProcedures())  as Procedure[];
+    appointments = (await getAppointments()) as Appointment[];
+    settings    = await getSettings();
   } catch (error) {
     console.error('Error fetching admin data:', error);
     dbError = true;
@@ -49,5 +64,12 @@ export default async function AdminPage() {
     );
   }
 
-  return <AdminDashboard doctors={doctors} procedures={procedures} appointments={appointments} settings={settings} />;
+  return (
+    <AdminDashboard
+      doctors={doctors}
+      procedures={procedures}
+      appointments={appointments}
+      settings={settings}
+    />
+  );
 }

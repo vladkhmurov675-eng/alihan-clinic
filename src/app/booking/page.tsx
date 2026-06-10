@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getDoctors, getOccupiedSlots, bookAppointment, getProceduresByDoctor } from '../actions';
 import { User, Phone, Clipboard, FileText, CheckCircle } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
@@ -22,6 +22,17 @@ interface Procedure {
     name: string;
     duration: number;
     price: number;
+}
+
+interface AppointmentResult {
+    id: number;
+    patientName: string;
+    patientPhone: string;
+    date: string;
+    time: string;
+    price: number | null;
+    doctor: { name: string; specialization: string };
+    procedure: { name: string } | null;
 }
 
 function generateSlots(start: string, end: string, duration: number): string[] {
@@ -48,7 +59,6 @@ function isDateDisabled(dateStr: string, doctor: Doctor): boolean {
 
 const todayStr = new Date().toISOString().split('T')[0];
 
-// ── Inner component that uses useSearchParams ──
 function BookingForm() {
     const [doctors, setDoctors] = useState<Doctor[]>([]);
     const [doctorId, setDoctorId] = useState<number | ''>('');
@@ -66,17 +76,40 @@ function BookingForm() {
     const [file, setFile] = useState<File | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState<any>(null);
+    const [success, setSuccess] = useState<AppointmentResult | null>(null);
 
     const searchParams = useSearchParams();
 
-    useEffect(() => {
-        const id = searchParams.get('doctorId');
-        if (id) setDoctorId(Number(id));
-    }, [searchParams]);
-
+    // Load doctors once on mount
     useEffect(() => {
         getDoctors().then(d => setDoctors(d as Doctor[]));
+    }, []);
+
+    // Set doctorId from URL param — only after doctors are loaded
+    useEffect(() => {
+        if (doctors.length === 0) return;
+        const id = searchParams.get('doctorId');
+        if (id) setDoctorId(Number(id));
+    }, [searchParams, doctors]);
+
+    // Load slots when doctor + date change
+    const loadSlots = useCallback(async (dId: number, d: string, doctorList: Doctor[]) => {
+        const doctor = doctorList.find(doc => doc.id === dId);
+        if (!doctor) return;
+
+        if (isDateDisabled(d, doctor)) {
+            setDateError('Врач не принимает в этот день. Выберите другую дату.');
+            setSlots([]);
+            setOccupiedSlots([]);
+            return;
+        }
+
+        setDateError('');
+        setLoadingSlots(true);
+        const occupied = await getOccupiedSlots(dId, d);
+        setOccupiedSlots(occupied);
+        setSlots(generateSlots(doctor.workStartTime, doctor.workEndTime, doctor.slotDuration));
+        setLoadingSlots(false);
     }, []);
 
     useEffect(() => {
@@ -84,24 +117,11 @@ function BookingForm() {
         setSlots([]);
         setOccupiedSlots([]);
         setDateError('');
-        if (!doctorId || !date) return;
+        if (!doctorId || !date || doctors.length === 0) return;
+        loadSlots(Number(doctorId), date, doctors);
+    }, [doctorId, date, doctors, loadSlots]);
 
-        const doctor = doctors.find(d => d.id === Number(doctorId));
-        if (!doctor) return;
-
-        if (isDateDisabled(date, doctor)) {
-            setDateError('Врач не принимает в этот день. Выберите другую дату.');
-            return;
-        }
-
-        setLoadingSlots(true);
-        getOccupiedSlots(Number(doctorId), date).then(occupied => {
-            setOccupiedSlots(occupied);
-            setSlots(generateSlots(doctor.workStartTime, doctor.workEndTime, doctor.slotDuration));
-            setLoadingSlots(false);
-        });
-    }, [doctorId, date, doctors]);
-
+    // Load procedures when doctor changes
     useEffect(() => {
         setProcedures([]);
         setProcedureId('');
@@ -139,8 +159,8 @@ function BookingForm() {
             if (file) formData.append('file', file);
 
             const res = await bookAppointment(formData);
-            if (res.success) {
-                setSuccess(res.appointment);
+            if (res.success && res.appointment) {
+                setSuccess(res.appointment as AppointmentResult);
             } else {
                 setError(res.error || 'Ошибка при записи');
             }
@@ -149,6 +169,14 @@ function BookingForm() {
         } finally {
             setSubmitting(false);
         }
+    }
+
+    function resetForm() {
+        setSuccess(null);
+        setDoctorId(''); setDate(''); setTime('');
+        setPatientName(''); setPatientPhone('+7');
+        setComplaint(''); setFile(null);
+        setProcedureId('');
     }
 
     if (success) {
@@ -172,7 +200,7 @@ function BookingForm() {
                             { label: 'Пациент', value: success.patientName },
                             { label: 'Врач', value: `${success.doctor.name} · ${success.doctor.specialization}` },
                             ...(success.procedure ? [{ label: 'Процедура', value: success.procedure.name }] : []),
-                            { label: 'Стоимость', value: `${success.price || 5000} ₸` },
+                            { label: 'Стоимость', value: `${success.price ?? 5000} ₸` },
                             { label: 'Дата и время', value: `${success.date} в ${success.time}` },
                             { label: 'Статус', value: 'Ожидает подтверждения' },
                         ].map(({ label, value }) => (
@@ -183,17 +211,7 @@ function BookingForm() {
                         ))}
                     </div>
 
-                    <button
-                        className="btn btn-outline"
-                        style={{ width: '100%' }}
-                        onClick={() => {
-                            setSuccess(null);
-                            setDoctorId(''); setDate(''); setTime('');
-                            setPatientName(''); setPatientPhone('+7');
-                            setComplaint(''); setFile(null);
-                            setProcedureId('');
-                        }}
-                    >
+                    <button className="btn btn-outline" style={{ width: '100%' }} onClick={resetForm}>
                         Записаться ещё раз
                     </button>
                 </div>
@@ -246,12 +264,11 @@ function BookingForm() {
                                     value={procedureId}
                                     onChange={e => setProcedureId(Number(e.target.value))}
                                     style={{ width: '100%' }}
-                                    required
                                 >
                                     <option value="">Выберите процедуру</option>
                                     {procedures.map(p => (
                                         <option key={p.id} value={p.id}>
-                                            {p.name} — {p.price} тг
+                                            {p.name} — {p.price} ₸
                                         </option>
                                     ))}
                                 </select>
@@ -375,7 +392,7 @@ function BookingForm() {
                                 <span style={{ fontSize: '0.88rem', color: file ? 'var(--text-primary)' : 'var(--text-muted)' }}>
                                     {file ? `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)` : 'Нажмите чтобы выбрать файл'}
                                 </span>
-                                <input type="file" style={{ display: 'none' }} onChange={e => setFile(e.target.files?.[0] || null)} />
+                                <input type="file" style={{ display: 'none' }} onChange={e => setFile(e.target.files?.[0] ?? null)} />
                             </label>
                         </div>
 
@@ -411,7 +428,6 @@ function BookingForm() {
     );
 }
 
-// ── Outer component wraps in Suspense ──
 export default function BookingPage() {
     return (
         <Suspense fallback={

@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, type SyntheticEvent } from 'react';
+import React, { useState } from 'react';
 import {
-  loginAdmin,
   logoutAdmin,
   createDoctor,
   updateDoctorByAdmin,
@@ -16,9 +15,9 @@ import {
   deleteAppointment,
 } from '../actions';
 import {
-  Lock, LogOut, Users, Settings as SettingsIcon,
+  LogOut, Users, Settings as SettingsIcon,
   Plus, Trash2, Edit3, Save, X, MessageCircle,
-  ShieldCheck, UserPlus, Phone, Clock, Calendar, HeartHandshake
+  UserPlus, Phone, Clock, Calendar, HeartHandshake
 } from 'lucide-react';
 
 
@@ -81,12 +80,6 @@ export default function AdminDashboard({
   appointments: Appointment[];
   settings: Record<string, string>;
 }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
-  const [loggingIn, setLoggingIn] = useState(false);
-
   const [activeTab, setActiveTab] = useState<'doctors' | 'procedures' | 'appointments' | 'settings' | 'logs'>('doctors');
   const [doctors, setDoctors] = useState<Doctor[]>(initialDoctors);
   const [procedures, setProcedures] = useState<Procedure[]>(initialProcedures);
@@ -142,30 +135,8 @@ export default function AdminDashboard({
   };
 
 
-  const handleLogin = async (e: React.SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoggingIn(true);
-    setLoginError('');
-    try {
-      const result = await loginAdmin(phone, password);
-      if (result.success) {
-        setIsLoggedIn(true);
-        showToast('Вход в панель администратора');
-      } else {
-        setLoginError(result.error || 'Ошибка входа');
-      }
-    } catch {
-      setLoginError('Ошибка сервера');
-    }
-    finally {
-      setLoggingIn(false);
-    };
-  };
-
   const handleLogout = async () => {
     await logoutAdmin();
-    setIsLoggedIn(false);
-    setPassword('');
   };
 
   const resetDoctorForm = () => {
@@ -190,12 +161,12 @@ export default function AdminDashboard({
     setShowDoctorForm(true);
   };
 
-  const handleSaveDoctor = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleSaveDoctor = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const phoneRegex = /^\+7\d{10}$/;
 
     if (!phoneRegex.test(doctorForm.phone)) {
-      setLoginError('Введите номер врача в формате +77012345678');
+      showToast('Введите номер врача в формате +77012345678', 'error');
       return;
     }
     setSavingDoctor(true);
@@ -497,7 +468,7 @@ export default function AdminDashboard({
                       className="form-control" style={{ width: '100%' }} required
                       value={doctorForm.phone}
                       onChange={(e) => {
-                        let value = e.target.value;
+                        const value = e.target.value;
 
                         const digits = value.replace(/\D/g, '');
 
@@ -586,15 +557,19 @@ export default function AdminDashboard({
                       placeholder="6,0"
                     />
                   </div>
-                  <div className="input-group" style={{ gridColumn: '1 / -1' }}>
-                    <label className="input-label">Нерабочие дни</label>
-                    <input
-                      className="form-control" style={{ width: '100%' }}
-                      value={doctorForm.disabledDates}
-                      onChange={e => setDoctorForm(prev => ({ ...prev, disabledDates: e.target.value }))}
-                      placeholder="2026-01-01,2026-03-08"
-                    />
-                  </div>
+                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label className="input-label">Нерабочие дни</label>
+                                <input
+                                    type="date"
+                                    className="form-control"
+                                    style={{ width: '100%' }}                                   
+                                    value={doctorForm.disabledDates}
+                                    disabled={!doctorForm.weekends && !doctorForm.disabledDates}
+                                    onChange={e => setDoctorForm(prev => ({ ...prev, disabledDates: e.target.value }))}
+                                />
+                            </div>
+                </div>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
                   <button
@@ -1150,4 +1125,4 @@ export default function AdminDashboard({
       )}
     </div>
   );
-} 
+}   

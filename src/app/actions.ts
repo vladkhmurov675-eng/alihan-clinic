@@ -3,8 +3,6 @@ import 'server-only';
 import bcrypt from 'bcrypt';
 import { prisma } from '../db';
 import { cookies } from 'next/headers';
-import fs from 'fs/promises';
-import path from 'path';
 import { sendWhatsAppMessage } from '@/app/lib/whatsapp';
 import { uploadFile } from '@/app/lib/r2';
 
@@ -151,7 +149,7 @@ export async function createDoctor(data: {
   return { success: true, doctor: newDoc };
 }
 
-export async function updateDoctorByAdmin(id: number, data: any) {
+export async function updateDoctorByAdmin(id: number, data: Record<string, any>) {
   if (!(await isAdminLoggedIn())) throw new Error('Access denied');
   // Hash password if it's being updated and isn't already hashed
   if (data.password && !data.password.startsWith('$2')) {
@@ -275,7 +273,7 @@ export async function getOccupiedSlots(doctorId: number, date: string): Promise<
 
 export async function bookAppointment(
   formData: FormData
-): Promise<{ success: boolean; appointment?: any; error?: string }> {
+): Promise<{ success: boolean; appointment?: Record<string, any>; error?: string }> {
   try {
     const doctorIdStr = formData.get('doctorId') as string;
     const patientName = formData.get('patientName') as string;
@@ -345,13 +343,13 @@ export async function bookAppointment(
     });
 
     return { success: true, appointment };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Booking error:', error);
     return { success: false, error: 'Произошла ошибка при бронировании' };
   }
 }
 
-export async function sendWhatsAppNotification(appointment: any) {
+export async function sendWhatsAppNotification(appointment: { patientName: string; patientPhone: string; date: string; time: string; doctor: { name: string } }) {
   const message = `Здравствуйте, ${appointment.patientName}! Вы записаны к врачу ${appointment.doctor.name} на ${appointment.date} в ${appointment.time}. Клиника "Алихан".`;
 
   await sendWhatsAppMessage(appointment.patientPhone, message);
@@ -441,7 +439,7 @@ export async function updateAppointment(appointmentId: number, data: {
       include: { doctor: true, procedure: true },
     });
     return { success: true, appointment: updated };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Update appointment error:', error);
     return { success: false, error: 'Произошла ошибка при обновлении записи' };
   }
@@ -454,7 +452,7 @@ export async function deleteAppointment(appointmentId: number) {
       where: { id: appointmentId },
     });
     return { success: true, appointment: deleted };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Delete appointment error:', error);
     return { success: false, error: 'Произошла ошибка при удалении записи' };
   }

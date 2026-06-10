@@ -87,7 +87,7 @@ export default function ServicesPage() {
       {/* Services */}
       <section style={{ maxWidth: 1100, margin: "0 auto", padding: "3rem 1.5rem" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-          {SERVICES.map((s, i) => (
+          {SERVICES.map((s) => (
             <div key={s.title} className="card" style={{ padding: "2rem", overflow: "hidden" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", alignItems: "start" }}>
 

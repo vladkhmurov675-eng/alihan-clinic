@@ -1,45 +1,70 @@
 import { redirect } from 'next/navigation';
-import { getSessionDoctorId } from '../actions';
-import DoctorDashboard from '../components/DoctorDashboard';
-import { getDoctors } from '../actions';
+import { getSessionRole, getDoctors, getProcedures, getDirectorStats } from '../actions';
+import DirectorDashboard from '../components/DirectorDashboard';
 
 export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Кабинет врача | Клиника Алихан',
-  description: 'Панель управления для врачей клиники Алихан.',
+  title: 'Руководитель | Клиника Алихан',
+  description: 'Аналитика клиники — записи, выручка, загрузка врачей.',
 };
 
-export default async function DoctorPage() {
-  // Auth check — redirect to login if not a doctor
-  const doctorId = await getSessionDoctorId();
-  if (!doctorId) {
+interface Doctor {
+  id: number;
+  name: string;
+  specialization: string;
+}
+
+interface Procedure {
+  id: number;
+  name: string;
+  price: number;
+}
+
+interface Appointment {
+  id: number;
+  date: string;
+  time: string;
+  patientName: string;
+  patientPhone: string;
+  status: string;
+  price: number;
+  doctor: Doctor;
+  procedure: Procedure | null;
+}
+
+function getDateRange(days: number) {
+  const to   = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - days);
+  return {
+    from: from.toISOString().split('T')[0],
+    to:   to.toISOString().split('T')[0],
+  };
+}
+
+export default async function DirectorPage() {
+  const role = await getSessionRole();
+  if (role !== 'director' && role !== 'admin') {
     redirect('/login');
   }
 
-  let doctors: any[] = [];
-  let dbError = false;
+  const { from, to } = getDateRange(30);
 
-  try {
-    doctors = await getDoctors();
-  } catch (error) {
-    console.error('Error fetching doctors:', error);
-    dbError = true;
-  }
+  const [appointments, doctors, procedures] = await Promise.all([
+    getDirectorStats(from, to),
+    getDoctors(),
+    getProcedures(),
+  ]);
 
-  if (dbError) {
-    return (
-      <div className="container" style={{ paddingTop: '3rem', textAlign: 'center' }}>
-        <div className="glass-panel" style={{
-          padding: '3rem', maxWidth: '600px', margin: '0 auto',
-          borderColor: 'var(--color-danger)', background: 'var(--color-danger-glow)',
-        }}>
-          <h2 style={{ color: '#f87171', marginBottom: '1rem' }}>Ошибка подключения к базе данных</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>Проверьте настройки PostgreSQL в файле <code>.env</code></p>
-        </div>
-      </div>
-    );
-  }
-
-  return <DoctorDashboard doctors={doctors} />;
+  return (
+    <DirectorDashboard
+      initialAppointments={appointments as Appointment[]}
+      doctors={doctors as Doctor[]}
+      procedures={procedures as Procedure[]}
+      initialFrom={from}
+      initialTo={to}
+    />
+  );
 }
