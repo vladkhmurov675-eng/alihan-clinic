@@ -10,6 +10,7 @@ import {
   getWhatsAppLogs,
   getCurrentDoctor,
 } from '../actions';
+import DisabledDatesCalendar from './DisabledDatesCalendar';
 import {
   LogOut, Calendar, Clock, User, Phone,
   CheckCircle, XCircle, FileText, Settings,
@@ -699,12 +700,10 @@ export default function DoctorDashboard() {
                   />
                 </div>
                 <div className="input-group" style={{ gridColumn: '1 / -1' }}>
-                  <label className="input-label">Нерабочие дни (через запятую: ГГГГ-ММ-ДД)</label>
-                  <input
-                    className="form-control" style={{ width: '100%' }}
+                  <label className="input-label">Нерабочие дни (выберите в календаре)</label>
+                  <DisabledDatesCalendar
                     value={settingsForm.disabledDates}
-                    onChange={e => setSettingsForm(prev => ({ ...prev, disabledDates: e.target.value }))}
-                    placeholder="2026-01-01,2026-03-08"
+                    onChange={e => setSettingsForm(prev => ({ ...prev, disabledDates: e }))}
                   />
                 </div>
               </div>

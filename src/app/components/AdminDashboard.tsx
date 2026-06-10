@@ -14,6 +14,7 @@ import {
   updateAppointment,
   deleteAppointment,
 } from '../actions';
+import DisabledDatesCalendar from './DisabledDatesCalendar';
 import {
   LogOut, Users, Settings as SettingsIcon,
   Plus, Trash2, Edit3, Save, X, MessageCircle,
@@ -557,18 +558,13 @@ export default function AdminDashboard({
                       placeholder="6,0"
                     />
                   </div>
-                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="input-label">Нерабочие дни</label>
-                                <input
-                                    type="date"
-                                    className="form-control"
-                                    style={{ width: '100%' }}                                   
-                                    value={doctorForm.disabledDates}
-                                    disabled={!doctorForm.weekends && !doctorForm.disabledDates}
-                                    onChange={e => setDoctorForm(prev => ({ ...prev, disabledDates: e.target.value }))}
-                                />
-                            </div>
+                  <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+                    <label className="input-label">Нерабочие дни (выберите в календаре)</label>
+                    <DisabledDatesCalendar
+                      value={doctorForm.disabledDates}
+                      onChange={e => setDoctorForm(prev => ({ ...prev, disabledDates: e }))}
+                    />
+                  </div>
                 </div>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
