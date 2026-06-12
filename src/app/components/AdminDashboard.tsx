@@ -27,15 +27,15 @@ import WhatsAppLogs from './WhatsAppLogs';
 
 interface Doctor {
   id: number; name: string; phone: string; specialization: string;
-  avatar: string | null; slotDuration: number; workStartTime: string;
+  avatar: string; slotDuration: number; workStartTime: string;
   workEndTime: string; weekends: string; disabledDates: string;
-  password?: string; education: string | null; description: string | null; experienceYears: number | null;
+  password: string; education: string; description: string; experienceYears: number;
 }
 interface Procedure { id: number; name: string; doctorId: number; duration: number; price: number; }
 interface Appointment {
   id: number; patientName: string; patientPhone: string;
   date: string; time: string; status: string;
-  doctorId: number; procedureId: number | null; complaint: string; price: number | null; filePath: string | null;
+  doctorId: number; procedureId: number; complaint: string; price: number; filePath: string;
 }
 
 const BLANK_DOCTOR: DoctorFormData = {
@@ -72,6 +72,7 @@ export default function AdminDashboard({
   const [doctorForm, setDoctorForm] = useState<DoctorFormData>(BLANK_DOCTOR);
   const [savingDoctor, setSavingDoctor] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const isAdmin = true; // For now, since this is only used in AdminDashboard. Can be passed as prop if DoctorDashboard reuses DoctorForm in the future.  
 
   // Procedure form
   const [showProcedureForm, setShowProcedureForm] = useState(false);
@@ -105,8 +106,8 @@ export default function AdminDashboard({
       name: doc.name, phone: doc.phone, specialization: doc.specialization,
       slotDuration: doc.slotDuration, workStartTime: doc.workStartTime,
       workEndTime: doc.workEndTime, weekends: doc.weekends,
-      disabledDates: doc.disabledDates, password: '',
-      education: doc.education ?? '', experienceYears: doc.experienceYears ?? 0, description: doc.description ?? '',
+      disabledDates: doc.disabledDates, password: doc.password || '',
+      education: doc.education, experienceYears: doc.experienceYears, description: doc.description,
     });
     setShowDoctorForm(true);
   };
@@ -199,8 +200,8 @@ export default function AdminDashboard({
     setAppointmentForm({
       patientName: appt.patientName, patientPhone: appt.patientPhone,
       date: appt.date, time: appt.time, status: appt.status,
-      doctorId: appt.doctorId, procedureId: appt.procedureId ?? 0,
-      complaint: appt.complaint, price: appt.price ?? 5000, filePath: appt.filePath ?? '',
+      doctorId: appt.doctorId, procedureId: appt.procedureId,
+      complaint: appt.complaint, price: appt.price, filePath: appt.filePath,
     });
     setShowAppointmentForm(true);
   };
@@ -315,7 +316,7 @@ export default function AdminDashboard({
           </div>
 
           {showDoctorForm && (
-            <DoctorForm
+            <DoctorForm isAdmin={isAdmin == true}
               form={doctorForm}
               onChange={setDoctorForm}
               onSubmit={handleSaveDoctor}
@@ -483,7 +484,7 @@ export default function AdminDashboard({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {appointments.map(appt => {
                 const doctor = doctors.find(d => d.id === appt.doctorId);
-                const procedure = appt.procedureId ? procedures.find(p => p.id === appt.procedureId) : null;
+                const procedure = procedures.find(p => p.id === appt.procedureId);
                 return (
                   <div key={appt.id} className="glass-panel" style={{
                     padding: '1.25rem 1.5rem',

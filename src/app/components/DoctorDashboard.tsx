@@ -31,8 +31,6 @@ import {
   ClipboardList,
 } from "lucide-react";
 
-import { useToast } from "../hooks/toast";
-
 
 interface Doctor {
   id: number;

@@ -5,7 +5,30 @@ import { getCurrentDoctor, updateDoctorSettings } from '../../actions';
 import DisabledDatesPicker from '../DisabledDatesPicker';
 import { useToast } from '../../hooks/toast';
 
-export default function DoctorForm() {
+export  interface DoctorFormData {
+  id: number;
+  name: string;
+  phone: string;
+  specialization: string;
+  education: string;
+  experienceYears: number;
+  description: string;
+  slotDuration: number;
+  workStartTime: string;
+  workEndTime: string;
+  weekends: string; // e.g. "6,0"
+  disabledDates: string; // e.g. "2024-12-24,2024-12-25"
+  password?: string; // Only used when admin wants to change doctor's password. Ignored otherwise.
+}
+
+
+interface Props {
+  isAdmin: boolean;
+
+}
+
+
+export default function DoctorForm({ isAdmin }: Props) {
 
   const { showToast, ToastComponent } = useToast();
 
@@ -185,16 +208,17 @@ export default function DoctorForm() {
               onChange={v => setSettingsForm(p => ({ ...p, disabledDates: v }))}
             />
           </div>
-
-          <div className="input-group" style={{ gridColumn: '1 / -1' }}>
-            <label className="input-label">Новый пароль (оставьте пустым, чтобы не менять)</label>
-            <input
-              type="password" className="form-control" style={{ width: '100%' }}
-              value={settingsForm.password}
-              onChange={e => setSettingsForm(p => ({ ...p, password: e.target.value }))}
-              placeholder="Не менять"
-            />
-          </div>
+          {isAdmin && (
+            <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+              <label className="input-label">Новый пароль (оставьте пустым, чтобы не менять)</label>
+              <input
+                type="password" className="form-control" style={{ width: '100%' }}
+                value={settingsForm.password}
+                onChange={e => setSettingsForm(p => ({ ...p, password: e.target.value }))}
+                placeholder="Не менять"
+              />
+            </div>
+          )}
 
         </div>
 
