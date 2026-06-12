@@ -1,0 +1,27 @@
+Role		Phone		Password
+Admin		+77471852674	ClinicAdmin2025!
+Director	+77776707356	ClinicDirector2025!
+Dr. Иванова	+77011112233	Doctor1111!
+Dr. Петров	+77022223344	Doctor2222!
+Dr. Алиханов	+77033334455	Doctor3333!
+
+$env:STANDALONE="true"; npx tsx src/app/lib/whatsapp.ts
+Remove-Item Env:STANDALONE
+
+token value:
+cfut_UmEWXOpnQlVMbkYFG45CamDNAkN6ZaQr8xYm6hKt2f116244
+
+access key id:
+1f1c272c6c17371d7fb1570fdd3b082e
+
+secret access key:
+87994a52dfbbbbcd67b5b28ca1780ea28540407cce9edae9cfe3a009a4086e4c
+
+https://a402cc10f9e9e982cf05955ae9b6be5b.r2.cloudflarestorage.com
+
+DATABASE_URL="postgresql://postgres:vladislav056@localhost:5432/alihan_clinic?schema=public"
+
+2ZHmnQd1Jrdhc4iv
+vladisalv056
+,
+В кабинет врача добавляем фото, справочник специализации, добавляем двхуфакторную аутентификацию, календарь для нерабочих дней, группировка/поиск услуг для администратора, личный кабинет для администратора офиса, работа над экраном директора(график врачей, дропдаун меню для графика и конкретного врача), отчеты, подтверждение через ватсапп, отзывы, поиск, карточка, более удобная сортировка и поиск по месяцам для врачей

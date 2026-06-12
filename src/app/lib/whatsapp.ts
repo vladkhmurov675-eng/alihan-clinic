@@ -102,3 +102,15 @@ export async function sendTomorrowSchedules(): Promise<void> {
     }
 }
 
+if (process.env.STANDALONE === 'true') {
+    sendTomorrowSchedules()
+        .then(() => {
+            console.log("Tomorrow's schedule sent successfully.");
+            process.exit(0);
+        })
+        .catch(err => {
+            console.error("Failed to send tomorrow's schedule:", err);
+            process.exit(1);
+        });
+}
+

@@ -165,6 +165,25 @@ export async function deleteDoctor(id: number) {
   return { success: true };
 }
 
+export async function updateDoctorAvatar(avatarUrl: string) {
+  const doctorId = await getSessionDoctorId();
+  if (!doctorId) throw new Error('Unauthorized');
+  const updated = await prisma.doctor.update({
+    where: { id: doctorId },
+    data: { avatar: avatarUrl },
+  });
+  return { success: true, doctor: updated };
+}
+
+export async function updateDoctorAvatarByAdmin(doctorId: number, avatarUrl: string) {
+  if (!(await isAdminLoggedIn())) throw new Error('Access denied');
+  const updated = await prisma.doctor.update({
+    where: { id: doctorId },
+    data: { avatar: avatarUrl },
+  });
+  return { success: true, doctor: updated };
+}
+
 export async function updateDoctorSettings(data: {
   name: string; phone: string; specialization: string;
   slotDuration: number; workStartTime: string; workEndTime: string;

@@ -36,9 +36,9 @@ export default async function DirectorPage() {
 
   return (
     <DirectorDashboard
-      initialAppointments={appointments as Array<Record<string, any>>}
-      doctors={doctors as Array<Record<string, any>>}
-      procedures={procedures as Array<Record<string, any>>}
+      initialAppointments={appointments as any}
+      doctors={doctors as any}
+      procedures={procedures as any}
       initialFrom={from}
       initialTo={to}
     />
