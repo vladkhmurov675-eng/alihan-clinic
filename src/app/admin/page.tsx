@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { isAdminLoggedIn, getDoctors, getSettings, getProcedures, getAppointments } from '../actions';
+import { isAdminLoggedIn, getDoctors, getSettings, getProcedures, getAppointmentsByAdmin } from '../actions';
 import AdminDashboard from '../components/AdminDashboard';
 
 export const revalidate = 0;
@@ -14,7 +14,7 @@ interface Doctor {
   id: number; name: string; phone: string; specialization: string;
   avatar: string | null; slotDuration: number; workStartTime: string;
   workEndTime: string; weekends: string; disabledDates: string;
-  password: string; education: string | null; experienceYears: number | null;
+  education: string | null; experienceYears: number | null;
   description: string | null; createdAt: Date;
 }
 
@@ -43,7 +43,7 @@ export default async function AdminPage() {
   try {
     doctors     = (await getDoctors())     as Doctor[];
     procedures  = (await getProcedures())  as Procedure[];
-    appointments = (await getAppointments()) as Appointment[];
+    appointments = (await getAppointmentsByAdmin()) as Appointment[];
     settings    = await getSettings();
   } catch (error) {
     console.error('Error fetching admin data:', error);

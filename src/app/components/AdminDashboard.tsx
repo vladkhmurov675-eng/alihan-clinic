@@ -24,19 +24,7 @@ import DoctorForm, { DoctorFormData } from './forms/DoctorForm';
 import ProcedureForm, { ProcedureFormData } from './forms/ProcedureForm';
 import AppointmentForm, { AppointmentFormData } from './forms/AppointmentForm';
 import WhatsAppLogs from './WhatsAppLogs';
-
-interface Doctor {
-  id: number; name: string; phone: string; specialization: string;
-  avatar: string; slotDuration: number; workStartTime: string;
-  workEndTime: string; weekends: string; disabledDates: string;
-  password: string; education: string; description: string; experienceYears: number;
-}
-interface Procedure { id: number; name: string; doctorId: number; duration: number; price: number; }
-interface Appointment {
-  id: number; patientName: string; patientPhone: string;
-  date: string; time: string; status: string;
-  doctorId: number; procedureId: number; complaint: string; price: number; filePath: string;
-}
+import {Doctor, Procedure, Appointment} from './types';
 
 const BLANK_DOCTOR: DoctorFormData = {
   name: '', phone: '', specialization: '',
@@ -106,7 +94,7 @@ export default function AdminDashboard({
       name: doc.name, phone: doc.phone, specialization: doc.specialization,
       slotDuration: doc.slotDuration, workStartTime: doc.workStartTime,
       workEndTime: doc.workEndTime, weekends: doc.weekends,
-      disabledDates: doc.disabledDates, password: doc.password || '',
+      disabledDates: doc.disabledDates, password: '',
       education: doc.education, experienceYears: doc.experienceYears, description: doc.description,
     });
     setShowDoctorForm(true);

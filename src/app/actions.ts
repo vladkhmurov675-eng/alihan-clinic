@@ -122,15 +122,15 @@ export async function logoutAdmin() { return logout(); }
 export async function getCurrentDoctor() {
   const doctorId = await getSessionDoctorId();
   if (!doctorId) return null;
-  return prisma.doctor.findUnique({ where: { id: doctorId } });
+  return prisma.doctor.findUnique({ where: { id: doctorId }, omit: {password: true}});
 }
 
 export async function getDoctors() {
-  return prisma.doctor.findMany({ orderBy: { name: 'asc' } });
+  return prisma.doctor.findMany({ orderBy: { name: 'asc' }, omit: {password:  true}});
 }
 
 export async function getDoctorById(id: number) {
-  return prisma.doctor.findUnique({ where: { id } });
+  return prisma.doctor.findUnique({ where: { id }, omit: {password: true} });
 }
 
 export async function createDoctor(data: {
@@ -187,7 +187,7 @@ export async function updateDoctorAvatarByAdmin(doctorId: number, avatarUrl: str
 export async function updateDoctorSettings(data: {
   name: string; phone: string; specialization: string;
   slotDuration: number; workStartTime: string; workEndTime: string;
-  weekends: string; disabledDates: string; password: string;
+  weekends: string; disabledDates: string; password?: string;
   education: string;
   experienceYears: number;
   description: string;
@@ -428,13 +428,23 @@ export async function updateAppointmentStatus(appointmentId: number, status: str
   return { success: true, appointment: updated };
 }
 
-export async function getAppointments() {
+export async function getAppointmentsByDoctor(){
+  const sessionid = await getSessionDoctorId();
+  if (!sessionid) throw new Error('Unauthorized');
   return prisma.appointment.findMany({
-    orderBy: [
-      { date: 'desc' },
-      { time: 'asc' },
-    ],
+    where: { doctorId: sessionid },
     include: { doctor: true, procedure: true },
+    orderBy: [{ date: 'desc' }, { time: 'asc' }],
+  });
+}
+
+export async function getAppointmentsByAdmin(){
+  const adminloggedin = await isAdminLoggedIn();
+  if (!adminloggedin) throw new Error('Unauthorized');
+  return prisma.appointment.findMany({
+    include: { doctor: true, procedure: true },
+    orderBy: [{ date: 'desc' }, { time: 'asc' }],
+    take: 500,
   });
 }
 

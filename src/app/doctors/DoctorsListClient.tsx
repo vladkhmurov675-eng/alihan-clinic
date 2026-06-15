@@ -10,7 +10,7 @@ interface Doctor {
   id: number;
   name: string;
   specialization: string;
-  avatar: string;
+  avatar: string | null;
   education: string;
   experienceYears: number;
   description: string;

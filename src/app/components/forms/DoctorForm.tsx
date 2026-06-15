@@ -1,12 +1,10 @@
 'use client';
 
-import { useState, useEffect, SyntheticEvent } from 'react';
-import { getCurrentDoctor, updateDoctorSettings } from '../../actions';
+import { useState } from 'react';
 import DisabledDatesPicker from '../DisabledDatesPicker';
 import { useToast } from '../../hooks/toast';
 
 export  interface DoctorFormData {
-  id: number;
   name: string;
   phone: string;
   specialization: string;
@@ -45,7 +43,7 @@ export default function DoctorForm({ isAdmin, form, onChange, onSubmit, onCancel
   const [status, setStatus] = useState<{
   type: 'idle' | 'success' | 'error';
   message: string;
-}>({ type: 'idle', message: '' });
+ }>({ type: 'idle', message: '' });
 
 
   return (
