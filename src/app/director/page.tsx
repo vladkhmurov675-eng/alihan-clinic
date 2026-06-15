@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getSessionRole, getDoctors, getProcedures, getDirectorStats } from '../actions';
 import DirectorDashboard from '../components/DirectorDashboard';
-
+import {Doctor, Procedure, Appointment} from "../components/types"
 export const revalidate = 0;
 
 export const metadata = {
@@ -36,9 +36,9 @@ export default async function DirectorPage() {
 
   return (
     <DirectorDashboard
-      initialAppointments={appointments as any}
-      doctors={doctors as any}
-      procedures={procedures as any}
+      initialAppointments={appointments as Appointment[]}
+      doctors={doctors as Doctor[]}
+      procedures={procedures as Procedure[]}
       initialFrom={from}
       initialTo={to}
     />

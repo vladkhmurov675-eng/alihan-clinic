@@ -47,10 +47,10 @@ model Appointment {
   filePath     String?
   status       String     @default("PENDING")
   createdAt    DateTime   @default(now())
-  price        Int?       @default(5000)
-  procedureId  Int?
+  price        Int       @default(5000)
+  procedureId  Int
   doctor       Doctor     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  procedure    Procedure? @relation(fields: [procedureId], references: [id])
+  procedure    Procedure @relation(fields: [procedureId], references: [id])
 }
 
 model Admin {

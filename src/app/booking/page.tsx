@@ -5,24 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getDoctors, getOccupiedSlots, bookAppointment, getProceduresByDoctor } from '../actions';
 import { User, Phone, Clipboard, FileText, CheckCircle } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-
-interface Doctor {
-    id: number;
-    name: string;
-    specialization: string;
-    workStartTime: string;
-    workEndTime: string;
-    slotDuration: number;
-    weekends: string;
-    disabledDates: string;
-}
-
-interface Procedure {
-    id: number;
-    name: string;
-    duration: number;
-    price: number;
-}
+import { Doctor, Procedure} from '../components/types';
 
 interface AppointmentResult {
     id: number;

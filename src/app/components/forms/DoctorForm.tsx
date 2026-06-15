@@ -3,21 +3,7 @@
 import { useState } from 'react';
 import DisabledDatesPicker from '../DisabledDatesPicker';
 import { useToast } from '../../hooks/toast';
-
-export  interface DoctorFormData {
-  name: string;
-  phone: string;
-  specialization: string;
-  education: string;
-  experienceYears: number;
-  description: string;
-  slotDuration: number;
-  workStartTime: string;
-  workEndTime: string;
-  weekends: string; // e.g. "6,0"
-  disabledDates: string; // e.g. "2024-12-24,2024-12-25"
-  password?: string; // Only used when admin wants to change doctor's password. Ignored otherwise.
-}
+import { DoctorFormData } from '../types';
 
 
 interface Props {

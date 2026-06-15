@@ -1,18 +1,6 @@
 import Link from 'next/link';
 import DoctorAvatar from './DoctorAvatar';
-
-interface Doctor {
-    id: number;
-    name: string;
-    specialization: string;
-    avatar: string;
-    education: string;
-    experienceYears: number;
-    description: string;
-    workStartTime: string;
-    workEndTime: string;
-    slotDuration: number;
-}
+import {Doctor} from '../components/types'; 
 
 interface Props {
     doctor: Doctor;

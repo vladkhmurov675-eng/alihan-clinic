@@ -20,16 +20,16 @@ import {
   Plus, Trash2, Edit3, Save, MessageCircle,
   UserPlus, Phone, Clock, Calendar, HeartHandshake, Camera,
 } from 'lucide-react';
-import DoctorForm, { DoctorFormData } from './forms/DoctorForm';
-import ProcedureForm, { ProcedureFormData } from './forms/ProcedureForm';
-import AppointmentForm, { AppointmentFormData } from './forms/AppointmentForm';
+import DoctorForm from './forms/DoctorForm';
+import ProcedureForm from './forms/ProcedureForm';
+import AppointmentForm from './forms/AppointmentForm';
 import WhatsAppLogs from './WhatsAppLogs';
-import {Doctor, Procedure, Appointment} from './types';
+import {Doctor, Procedure, Appointment, DoctorFormData, AppointmentFormData, ProcedureFormData} from './types';
 
 const BLANK_DOCTOR: DoctorFormData = {
   name: '', phone: '', specialization: '',
   slotDuration: 30, workStartTime: '07:00', workEndTime: '11:00',
-  weekends: '6,0', disabledDates: '', password: '', education: '', experienceYears: 0, description: '',
+  weekends: '6,0', disabledDates: '', education: '', password: '', experienceYears: 0, description: '',
 };
 const BLANK_PROCEDURE: ProcedureFormData = { name: '', doctorId: 0, duration: 0, price: 0 };
 const BLANK_APPOINTMENT: AppointmentFormData = {
@@ -94,8 +94,8 @@ export default function AdminDashboard({
       name: doc.name, phone: doc.phone, specialization: doc.specialization,
       slotDuration: doc.slotDuration, workStartTime: doc.workStartTime,
       workEndTime: doc.workEndTime, weekends: doc.weekends,
-      disabledDates: doc.disabledDates, password: '',
-      education: doc.education, experienceYears: doc.experienceYears, description: doc.description,
+      disabledDates: doc.disabledDates,
+      education: doc.education ?? '', experienceYears: doc.experienceYears ?? 0, description: doc.description ?? '',
     });
     setShowDoctorForm(true);
   };
@@ -111,14 +111,15 @@ export default function AdminDashboard({
     try {
       if (editingDoctor) {
         const { password, ...rest } = doctorForm;
-        const payload = password.trim() ? { ...rest, password } : rest;
+        const payload = password?.trim() ? { ...rest, password } : rest;
         const result = await updateDoctorByAdmin(editingDoctor.id, payload);
         if (result.success) {
           setDoctors(prev => prev.map(d => d.id === editingDoctor.id ? result.doctor as Doctor : d));
           showToast('Врач обновлен'); resetDoctorForm();
         }
       } else {
-        const result = await createDoctor(doctorForm);
+        
+        const result = await createDoctor({ ...doctorForm, password: doctorForm.password });
         if (result.success) {
           setDoctors(prev => [...prev, result.doctor as Doctor]);
           showToast('Врач добавлен'); resetDoctorForm();
@@ -189,7 +190,7 @@ export default function AdminDashboard({
       patientName: appt.patientName, patientPhone: appt.patientPhone,
       date: appt.date, time: appt.time, status: appt.status,
       doctorId: appt.doctorId, procedureId: appt.procedureId,
-      complaint: appt.complaint, price: appt.price, filePath: appt.filePath,
+      complaint: appt.complaint, price: appt.price, filePath: appt.filePath ?? '',
     });
     setShowAppointmentForm(true);
   };

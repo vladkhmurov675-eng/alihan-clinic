@@ -2,19 +2,7 @@
 
 import React from 'react';
 import { Save, X } from 'lucide-react';
-
-export interface ProcedureFormData {
-  name: string;
-  doctorId: number;
-  duration: number;
-  price: number;
-}
-
-interface Doctor {
-  id: number;
-  name: string;
-  specialization: string;
-}
+import { Doctor, ProcedureFormData } from '../types';
 
 interface Props {
   form: ProcedureFormData;

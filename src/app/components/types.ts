@@ -2,8 +2,8 @@ interface Doctor {
   id: number; name: string; phone: string; specialization: string;
   avatar: string | null; slotDuration: number; workStartTime: string;
   workEndTime: string; weekends: string; disabledDates: string;
-  education: string | null; experienceYears: number | null;
-  description: string | null; createdAt: Date;
+  education: string | ''; experienceYears: number | '';
+  description: string | ''; createdAt: Date;
 }
 
 interface Procedure {
@@ -13,9 +13,9 @@ interface Procedure {
 interface Appointment {
   id: number; doctorId: number; patientName: string; patientPhone: string;
   complaint: string; date: string; time: string; filePath: string | null;
-  status: string; price: number | null; procedureId: number | null; createdAt: Date;
+  status: string; price: number; procedureId: number; createdAt: Date;
   doctor: { id: number; name: string; specialization: string };
-  procedure: { id: number; name: string; price: number } | null;
+  procedure: { id: number; name: string; price: number };
 };
 
 interface Setting {
@@ -28,15 +28,15 @@ interface WhatsAppLog {
 }
 
 
-export type DoctorFormData = Omit<Doctor, 'id' | 'createdAt' | 'avatar'> & {
-  password?: string;
+type DoctorFormData = Omit<Doctor, 'id' | 'createdAt' | 'avatar'> & {
+  password?: string | null;
 };
 
-export type ProcedureFormData = Pick<Procedure, 'name' | 'doctorId' | 'duration' | 'price'>;
+type ProcedureFormData = Pick<Procedure, 'name' | 'doctorId' | 'duration' | 'price'>;
 
-export type AppointmentFormData = Omit<Appointment, 'id' | 'createdAt' | 'doctor' | 'procedure'> & {
+type AppointmentFormData = Omit<Appointment, 'id' | 'createdAt' | 'doctor' | 'procedure'> & {
   procedureId: number | null;
   filePath: string;
 };
 
-export type { Doctor, Procedure, Appointment, Setting, WhatsAppLog };
+export type { Doctor, Procedure, Appointment, Setting, WhatsAppLog, DoctorFormData, ProcedureFormData, AppointmentFormData };

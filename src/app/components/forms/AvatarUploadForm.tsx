@@ -1,6 +1,8 @@
-import Cropper from 'react-easy-crop';
+'use client'
+import Cropper, {Area} from 'react-easy-crop';
 import {useState, useCallback} from 'react';
 import { uploadFile } from '../../lib/r2';
+
 
 interface Props {
     onSave: (url: string) => void;
@@ -8,7 +10,7 @@ interface Props {
 }
 
 
-async function getCroppedImg(imgSrc: string, croppedAreaPixels: any): Promise<Blob> {
+async function getCroppedImg(imgSrc: string, croppedAreaPixels: Area): Promise<Blob> {
     const image = await new  Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
@@ -22,6 +24,7 @@ async function getCroppedImg(imgSrc: string, croppedAreaPixels: any): Promise<Bl
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error("Canvas context not available");
 
   ctx.drawImage(
         image,
@@ -43,19 +46,19 @@ export default function AvatarUploadForm({ onSave,  onClose }: Props) {
   const [file, setFile] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedImage, setCroppedImage] = useState<string | null>(null);
+  const [croppedImage, setCroppedImage] = useState<Area | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [saving, setSaving] = useState(false);  
   const [error, setError] = useState('');
 
-  const onFileChange = (e) => {
+  const onFileChange = (e:React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setFile(URL.createObjectURL(file));
     setShowCropper(true);
     };
 
- const onCropComplete = useCallback((_: any, croppedPixels: any) => {
+ const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
     setCroppedImage(croppedPixels);
   }, []);
 

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { isAdminLoggedIn, getDoctors, getSettings, getProcedures, getAppointmentsByAdmin } from '../actions';
 import AdminDashboard from '../components/AdminDashboard';
+import { Doctor, Procedure, Appointment } from '../components/types';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -10,25 +11,6 @@ export const metadata = {
   description: 'Административная панель клиники Алихан.',
 };
 
-interface Doctor {
-  id: number; name: string; phone: string; specialization: string;
-  avatar: string | null; slotDuration: number; workStartTime: string;
-  workEndTime: string; weekends: string; disabledDates: string;
-  education: string | null; experienceYears: number | null;
-  description: string | null; createdAt: Date;
-}
-
-interface Procedure {
-  id: number; name: string; doctorId: number; duration: number; price: number;
-}
-
-interface Appointment {
-  id: number; doctorId: number; patientName: string; patientPhone: string;
-  complaint: string; date: string; time: string; filePath: string | null;
-  status: string; price: number | null; procedureId: number | null; createdAt: Date;
-  doctor: { id: number; name: string; specialization: string };
-  procedure: { id: number; name: string; price: number } | null;
-}
 
 export default async function AdminPage() {
   const isAdmin = await isAdminLoggedIn();

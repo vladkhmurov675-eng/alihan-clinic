@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getProcedures } from "../actions";
-
+import { Procedure } from "../components/types";
 export const metadata = {
   title: "Процедурный кабинет | Клиника Алихан",
   description: "Процедурный кабинет клиники Алихан. Капельницы, инъекции, перевязки, забор анализов.",
@@ -16,7 +16,7 @@ const RULES = [
 
 
 export default async function ProceduresPage() {
-  const procedures = await getProcedures();
+  const procedures: Procedure[] = await getProcedures();
   return (
     <div style={{ background: "var(--bg-primary)" }}>
 
