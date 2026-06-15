@@ -5,7 +5,6 @@ import { prisma } from '../db';
 import { cookies } from 'next/headers';
 import { sendWhatsAppMessage } from '@/app/lib/whatsapp';
 import { uploadFile } from '@/app/lib/r2';
-
 // ─────────────────────────────────────────
 // SESSION HELPERS
 // ─────────────────────────────────────────

@@ -2,8 +2,8 @@ interface Doctor {
   id: number; name: string; phone: string; specialization: string;
   avatar: string | null; slotDuration: number; workStartTime: string;
   workEndTime: string; weekends: string; disabledDates: string;
-  education: string | ''; experienceYears: number | '';
-  description: string | ''; createdAt: Date;
+  education?: string; experienceYears?: number;
+  description?: string; createdAt: Date;
 }
 
 interface Procedure {
@@ -29,7 +29,7 @@ interface WhatsAppLog {
 
 
 type DoctorFormData = Omit<Doctor, 'id' | 'createdAt' | 'avatar'> & {
-  password?: string | null;
+  password?: string;
 };
 
 type ProcedureFormData = Pick<Procedure, 'name' | 'doctorId' | 'duration' | 'price'>;
@@ -39,4 +39,10 @@ type AppointmentFormData = Omit<Appointment, 'id' | 'createdAt' | 'doctor' | 'pr
   filePath: string;
 };
 
-export type { Doctor, Procedure, Appointment, Setting, WhatsAppLog, DoctorFormData, ProcedureFormData, AppointmentFormData };
+interface DoctorWithRelations extends Doctor {
+  procedures: Procedure[];
+  appointments: Appointment[];
+}
+
+
+export type { Doctor, Procedure, Appointment, Setting, WhatsAppLog, DoctorFormData, ProcedureFormData, AppointmentFormData, DoctorWithRelations };

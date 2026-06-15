@@ -15,7 +15,6 @@ import {
   getWhatsAppLogs,
   getCurrentDoctor,
 } from "../actions";
-import DisabledDatesPicker from "./DisabledDatesPicker";
 import {
   LogOut,
   Calendar,
@@ -30,46 +29,9 @@ import {
   Activity,
   ClipboardList,
 } from "lucide-react";
+import { Doctor, Appointment, WhatsAppLog, DoctorFormData } from "./types";
+import DoctorForm from "./forms/DoctorForm";
 
-
-interface Doctor {
-  id: number;
-  name: string;
-  phone: string;
-  specialization: string;
-  avatar: string;
-  slotDuration: number;
-  workStartTime: string;
-  workEndTime: string;
-  weekends: string;
-  disabledDates: string;
-  password: string;
-  education: string;
-  experienceYears: number;
-  description: string;
-}
-
-interface Appointment {
-  id: number;
-  doctorId: number;
-  patientName: string;
-  patientPhone: string;
-  complaint: string;
-  date: string;
-  time: string;
-  filePath: string | null;
-  status: string;
-  createdAt: Date;
-}
-
-interface WhatsAppLogEntry {
-  id: number;
-  sentAt: Date;
-  recipientPhone: string;
-  recipientName: string;
-  message: string;
-  status: string;
-}
 
 export default function DoctorDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -96,7 +58,7 @@ export default function DoctorDashboard() {
   const [doctorProfile, setDoctorProfile] = useState<Doctor | null>(null);
 
   // Settings form state
-  const [settingsForm, setSettingsForm] = useState({
+  const [settingsForm, setSettingsForm] = useState<DoctorFormData>({
     name: "",
     phone: "",
     specialization: "",
@@ -105,7 +67,6 @@ export default function DoctorDashboard() {
     workEndTime: "11:00",
     weekends: "6,0",
     disabledDates: "",
-    password: "",
     education: "",
     experienceYears: 0,
     description: "",
@@ -114,7 +75,7 @@ export default function DoctorDashboard() {
   const [settingsMsg, setSettingsMsg] = useState("");
 
   // WhatsApp logs
-  const [logs, setLogs] = useState<WhatsAppLogEntry[]>([]);
+  const [logs, setLogs] = useState<WhatsAppLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
   // Toast
@@ -237,7 +198,6 @@ export default function DoctorDashboard() {
           workEndTime: doc.workEndTime,
           weekends: doc.weekends,
           disabledDates: doc.disabledDates,
-          password: doc.password,
           education: doc.education ?? "",
           experienceYears: doc.experienceYears ?? 0,
           description: doc.description ?? "",
@@ -252,7 +212,7 @@ export default function DoctorDashboard() {
     setLoadingLogs(true);
     try {
       const result = await getWhatsAppLogs();
-      setLogs(result as WhatsAppLogEntry[]);
+      setLogs(result as WhatsAppLog[]);
     } catch (err) {
       console.error("Error fetching logs:", err);
     } finally {
@@ -301,10 +261,9 @@ export default function DoctorDashboard() {
         workEndTime: settingsForm.workEndTime,
         weekends: settingsForm.weekends,
         disabledDates: settingsForm.disabledDates,
-        password: settingsForm.password,
-        education: settingsForm.education,
-        experienceYears: settingsForm.experienceYears,
-        description: settingsForm.description,
+        education: settingsForm.education ?? '',
+        experienceYears: settingsForm.experienceYears ?? 0,
+        description: settingsForm.description ?? '',
       });
       setSettingsMsg("Настройки сохранены");
       showToast("Настройки профиля сохранены");
@@ -919,216 +878,13 @@ export default function DoctorDashboard() {
       {/* ─── TAB: Settings ─── */}
       {activeTab === "settings" && (
         <div className="animate-fade-in">
-          <div
-            className="glass-panel"
-            style={{ padding: "2rem", maxWidth: "650px" }}
-          >
-            <h3 style={{ marginBottom: "1.5rem" }}>Настройки профиля</h3>
-            <form onSubmit={handleSaveSettings}>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "1rem",
-                }}
-              >
-                <div className="input-group" style={{ gridColumn: "1 / -1" }}>
-                  <label className="input-label">ФИО</label>
-                  <input
-                    className="form-control"
-                    style={{ width: "100%" }}
-                    value={settingsForm.name}
-                    onChange={(e) =>
-                      setSettingsForm((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="input-group">
-                  <label className="input-label">Телефон</label>
-                  <input
-                    className="form-control"
-                    style={{ width: "100%" }}
-                    value={settingsForm.phone}
-                    onChange={(e) =>
-                      setSettingsForm((prev) => ({
-                        ...prev,
-                        phone: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="input-group">
-                  <label className="input-label">Специализация</label>
-                  <input
-                    className="form-control"
-                    style={{ width: "100%" }}
-                    value={settingsForm.specialization}
-                    onChange={(e) =>
-                      setSettingsForm((prev) => ({
-                        ...prev,
-                        specialization: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="input-group">
-                  <label className="input-label">Образование</label>
-                  <input
-                    className="form-control"
-                    style={{ width: "100%" }}
-                    value={settingsForm.education}
-                    onChange={(e) =>
-                      setSettingsForm((prev) => ({
-                        ...prev,
-                        education: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="input-group">
-                  <label className="input-label">Опыт (лет)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    style={{ width: "100%" }}
-                    value={settingsForm.experienceYears}
-                    onChange={(e) =>
-                      setSettingsForm((prev) => ({
-                        ...prev,
-                        experienceYears: Number(e.target.value),
-                      }))
-                    }
-                  />
-                </div>
-                <div className="input-group" style={{ gridColumn: "1 / -1" }}>
-                  <label className="input-label">
-                    Описание / Краткая биография
-                  </label>
-                  <textarea
-                    className="form-control"
-                    style={{
-                      width: "100%",
-                      minHeight: "80px",
-                      resize: "vertical",
-                    }}
-                    value={settingsForm.description}
-                    onChange={(e) =>
-                      setSettingsForm((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="input-group">
-                  <label className="input-label">
-                    Длительность приёма (мин)
-                  </label>
-                  <select
-                    className="form-control"
-                    style={{ width: "100%" }}
-                    value={settingsForm.slotDuration}
-                    onChange={(e) =>
-                      setSettingsForm((prev) => ({
-                        ...prev,
-                        slotDuration: Number(e.target.value),
-                      }))
-                    }
-                  >
-                    <option value={20}>20 минут</option>
-                    <option value={30}>30 минут</option>
-                    <option value={40}>40 минут</option>
-                    <option value={60}>60 минут</option>
-                  </select>
-                </div>
-                <div className="input-group">
-                  <label className="input-label">Начало работы</label>
-                  <input
-                    type="time"
-                    className="form-control"
-                    style={{ width: "100%" }}
-                    value={settingsForm.workStartTime}
-                    onChange={(e) =>
-                      setSettingsForm((prev) => ({
-                        ...prev,
-                        workStartTime: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="input-group">
-                  <label className="input-label">Конец работы</label>
-                  <input
-                    type="time"
-                    className="form-control"
-                    style={{ width: "100%" }}
-                    value={settingsForm.workEndTime}
-                    onChange={(e) =>
-                      setSettingsForm((prev) => ({
-                        ...prev,
-                        workEndTime: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="input-group" style={{ gridColumn: "1 / -1" }}>
-                  <label className="input-label">
-                    Выходные дни (через запятую: 0=Вс, 1=Пн, ..., 6=Сб)
-                  </label>
-                  <input
-                    className="form-control"
-                    style={{ width: "100%" }}
-                    value={settingsForm.weekends}
-                    onChange={(e) =>
-                      setSettingsForm((prev) => ({
-                        ...prev,
-                        weekends: e.target.value,
-                      }))
-                    }
-                    placeholder="6,0"
-                  />
-                </div>
-                <div className="input-group" style={{ gridColumn: "1 / -1" }}>
-                  <label className="input-label">
-                    Нерабочие дни (выберите в календаре)
-                  </label>
-                  <DisabledDatesPicker
-                    value={settingsForm.disabledDates}
-                    onChange={(e) =>
-                      setSettingsForm((prev) => ({ ...prev, disabledDates: e }))
-                    }
-                  />
-                </div>
-              </div>
-
-              {settingsMsg && (
-                <p
-                  style={{
-                    marginTop: "1rem",
-                    fontSize: "0.85rem",
-                    fontWeight: 600,
-                    color: settingsMsg.includes("Ошибка")
-                      ? "var(--color-danger)"
-                      : "var(--color-primary)",
-                  }}
-                >
-                  {settingsMsg}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={savingSettings}
-                className={`btn ${savingSettings ? "btn-disabled" : "btn-primary"}`}
-                style={{ marginTop: "1.5rem", padding: "0.75rem 2rem" }}
-              >
-                {savingSettings ? "Сохранение..." : "Сохранить настройки"}
-              </button>
-            </form>
-          </div>
+          <DoctorForm
+            isAdmin={false}
+            form={settingsForm}
+            onChange={setSettingsForm}
+            onSubmit={handleSaveSettings}
+            saving={savingSettings}
+          />
         </div>
       )}
 
