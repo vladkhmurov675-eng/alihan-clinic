@@ -97,10 +97,11 @@ export default function DoctorsListClient({ doctors }: { doctors: Doctor[] }) {
         zIndex: 10,
       }}>
         <div style={{
-          maxWidth: 1200, margin: '4rem auto 2rem',
-          padding: '2.5rem 1.5rem',
+          maxWidth: 1200, margin: '0 auto',
+          padding: '0rem  ',
           display: 'flex', gap: '0.25rem',
-          overflowX: 'auto',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
           scrollbarWidth: 'none',
         }}>
           {categories.map(cat => {
