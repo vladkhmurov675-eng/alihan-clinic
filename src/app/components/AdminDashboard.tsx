@@ -5,7 +5,6 @@ import {
   logoutAdmin,
   createDoctor,
   updateDoctorByAdmin,
-  updateDoctorAvatarByAdmin,
   deleteDoctor,
   saveSettings,
   createProcedure,
@@ -14,11 +13,10 @@ import {
   updateAppointment,
   deleteAppointment,
 } from '../actions';
-import { uploadFile } from '../lib/r2';
 import {
   LogOut, Users, Settings as SettingsIcon,
   Plus, Trash2, Edit3, Save, MessageCircle,
-  UserPlus, Phone, Clock, Calendar, HeartHandshake, Camera,
+  UserPlus, Phone, Clock, Calendar, HeartHandshake,
 } from 'lucide-react';
 import DoctorForm from './forms/DoctorForm';
 import ProcedureForm from './forms/ProcedureForm';
@@ -59,7 +57,6 @@ export default function AdminDashboard({
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
   const [doctorForm, setDoctorForm] = useState<DoctorFormData>(BLANK_DOCTOR);
   const [savingDoctor, setSavingDoctor] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const isAdmin = true; // For now, since this is only used in AdminDashboard. Can be passed as prop if DoctorDashboard reuses DoctorForm in the future.  
 
   // Procedure form
@@ -94,7 +91,7 @@ export default function AdminDashboard({
       name: doc.name, phone: doc.phone, specialization: doc.specialization,
       slotDuration: doc.slotDuration, workStartTime: doc.workStartTime,
       workEndTime: doc.workEndTime, weekends: doc.weekends,
-      disabledDates: doc.disabledDates,
+      disabledDates: doc.disabledDates, password: '',
       education: doc.education ?? '', experienceYears: doc.experienceYears ?? 0, description: doc.description ?? '',
     });
     setShowDoctorForm(true);
@@ -119,7 +116,7 @@ export default function AdminDashboard({
         }
       } else {
         
-        const result = await createDoctor({ ...doctorForm, password: doctorForm.password });
+        const result = await createDoctor({doctorForm});
         if (result.success) {
           setDoctors(prev => [...prev, result.doctor as Doctor]);
           showToast('Врач добавлен'); resetDoctorForm();
@@ -133,19 +130,6 @@ export default function AdminDashboard({
     if (!confirm('Удалить врача? Все записи к нему будут удалены.')) return;
     try { await deleteDoctor(id); setDoctors(prev => prev.filter(d => d.id !== id)); showToast('Врач удален'); }
     catch { showToast('Ошибка удаления', 'error'); }
-  };
-
-  const handleAdminAvatarUpload = async (doctorId: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingAvatar(true);
-    try {
-      const url = await uploadFile(file);
-      await updateDoctorAvatarByAdmin(doctorId, url);
-      setDoctors(prev => prev.map(d => d.id === doctorId ? { ...d, avatar: url } : d));
-      showToast('Фото обновлено');
-    } catch { showToast('Ошибка загрузки фото', 'error'); }
-    finally { setUploadingAvatar(false); }
   };
 
   // ── Handlers: Procedure ──
@@ -346,17 +330,6 @@ export default function AdminDashboard({
                             : <span>{initials}</span>
                           }
                         </div>
-                        <label title="Изменить фото" style={{
-                          position: 'absolute', bottom: -2, right: -2,
-                          width: 20, height: 20, borderRadius: '50%',
-                          background: 'var(--color-primary)', border: '2px solid white',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          cursor: uploadingAvatar ? 'wait' : 'pointer', color: '#fff',
-                        }}>
-                          <Camera size={10} />
-                          <input type="file" accept="image/*" style={{ display: 'none' }}
-                            onChange={e => handleAdminAvatarUpload(doc.id, e)} />
-                        </label>
                       </div>
                       <div>
                         <span style={{ fontSize: '0.7rem', fontWeight: 700, color: specColor, textTransform: 'uppercase', letterSpacing: '0.05em' }}>

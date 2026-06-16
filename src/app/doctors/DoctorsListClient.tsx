@@ -5,19 +5,7 @@ import { useRouter } from 'next/navigation';
 import SearchBar from '../components/SearchBar';
 import DoctorAvatar from '.././components/DoctorAvatar';
 import DoctorCard from '../components/DoctorCard';
-
-interface Doctor {
-  id: number;
-  name: string;
-  specialization: string;
-  avatar: string | null;
-  education: string;
-  experienceYears: number;
-  description: string;
-  workStartTime: string;
-  workEndTime: string;
-  slotDuration: number;
-}
+import { Doctor } from '../components/types';
 
 function getDoctorColor(spec: string) {
   if (spec.includes('Терап')) return '#1a4a6b';
@@ -91,7 +79,7 @@ export default function DoctorsListClient({ doctors }: { doctors: Doctor[] }) {
                 style={{ padding: '0.75rem 1.25rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
                 onClick={() => router.push(`/booking?doctorId=${doc.id}`)}
               >
-                <DoctorAvatar avatar={doc.avatar} name={doc.name} size={36} color={getDoctorColor(doc.specialization)} />
+                <DoctorAvatar avatar={doc.avatar} name={doc.name} size={50} color={getDoctorColor(doc.specialization)} />
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{doc.name}</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{doc.specialization}</div>
@@ -106,11 +94,11 @@ export default function DoctorsListClient({ doctors }: { doctors: Doctor[] }) {
       <div style={{
         borderBottom: '1px solid var(--border-color)',
         background: 'var(--bg-primary)',
-        position: 'relative', top: 60, zIndex: 10,
+        zIndex: 10,
       }}>
         <div style={{
-          maxWidth: 1200, margin: '0 auto',
-          padding: '0 1.5rem',
+          maxWidth: 1200, margin: '4rem auto 2rem',
+          padding: '2.5rem 1.5rem',
           display: 'flex', gap: '0.25rem',
           overflowX: 'auto',
           scrollbarWidth: 'none',
@@ -153,7 +141,7 @@ export default function DoctorsListClient({ doctors }: { doctors: Doctor[] }) {
       </div>
 
       {/* Doctors grid */}
-      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '2.5rem 1.5rem' }}>
+      <section style={{ maxWidth: 1200, margin: '2rem auto', padding: '2.5rem 1.5rem' }}>
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
             Врачи в этой категории не найдены

@@ -24,7 +24,7 @@ export default function DoctorCard({ doctor: d, color, showBookingButton = true,
   <div className="card" style={{ padding: 0, overflow: 'hidden', cursor: onClick ? 'pointer' : 'default' }} onClick={onClick}>
       {/* Photo banner */}
       <div style={{
-        width: '100%', height: 180,
+        width: '100%', height: '50%',
         background: `linear-gradient(160deg, ${specColor}33, ${specColor}99)`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         overflow: 'hidden',
