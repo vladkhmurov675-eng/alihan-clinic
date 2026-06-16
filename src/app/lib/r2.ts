@@ -10,6 +10,9 @@ const r2 = new S3Client({
 });
 
 export async function uploadFile(file: File): Promise<string> {
+    if (!process.env.R2_BUCKET_NAME) throw new Error('R2_BUCKET_NAME is not set');
+    if (!process.env.R2_ACCOUNT_ID)  throw new Error('R2_ACCOUNT_ID is not set');
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const filename = `uploads/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;

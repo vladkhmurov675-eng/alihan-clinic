@@ -25,3 +25,18 @@ DATABASE_URL="postgresql://postgres:vladislav056@localhost:5432/alihan_clinic?sc
 vladisalv056
 ,
 В кабинет врача добавляем фото, справочник специализации, добавляем двхуфакторную аутентификацию, календарь для нерабочих дней, группировка/поиск услуг для администратора, личный кабинет для администратора офиса, работа над экраном директора(график врачей, дропдаун меню для графика и конкретного врача), отчеты, подтверждение через ватсапп, отзывы, поиск, карточка, более удобная сортировка и поиск по месяцам для врачей
+
+
+
+
+DATABASE_URL="postgresql://postgres.gtblqakulvjdyxugznxg:vladisalv056@aws-1-ap-south-1.pooler.supabase.com:5432/postgres"
+DIRECT_URL="postgresql://postgres.gtblqakulvjdyxugznxg:vladisalv056@aws-1-ap-south-1.pooler.supabase.com:5432/postgres"
+GREEN_API_ID = "7107642792"
+GREEN_API_TOKEN = "3203631c5d65440cbca17c42ea581cb801dc9bb86fc34adfad"
+GREEN_API_URL = "https://7107.api.greenapi.com"
+CRON_SECRET=alihan_cron_2026
+R2_ACCOUNT_ID=a402cc10f9e9e982cf05955ae9b6be5b
+R2_ACCESS_KEY_ID=1f1c272c6c17371d7fb1570fdd3b082e
+R2_SECRET_ACCESS_KEY=87994a52dfbbbbcd67b5b28ca1780ea28540407cce9edae9cfe3a009a4086e4c
+R2_BUCKET_NAME=alihan-clinic
+R2_PUBLIC_URL=https://pub-fe1e10f55f32400abc08fbea84931a54.r2.dev

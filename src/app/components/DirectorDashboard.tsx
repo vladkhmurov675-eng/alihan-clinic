@@ -7,17 +7,8 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import { TrendingUp, Users, Calendar, DollarSign, Filter, RefreshCw } from 'lucide-react';
+import {Doctor, Procedure, Appointment} from './types';
 
-// ── Types ──────────────────────────────────────────────────────
-interface Doctor { id: number; name: string; specialization: string; }
-interface Procedure { id: number; name: string; price: number; }
-interface Appointment {
-  id: number; date: string; time: string;
-  patientName: string; patientPhone: string;
-  status: string; price: number;
-  doctor: Doctor;
-  procedure: Procedure | null;
-}
 
 // ── Constants ──────────────────────────────────────────────────
 const STATUS_LABELS: Record<string, string> = {

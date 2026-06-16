@@ -1,17 +1,20 @@
-'use client'
-import Cropper, {Area} from 'react-easy-crop';
-import {useState, useCallback} from 'react';
-import { uploadFile } from '../../lib/r2';
+'use client';
 
+import Cropper, { Area } from 'react-easy-crop';
+import { useState, useCallback } from 'react';
+import { uploadFile } from '../../lib/r2';
+import { updateDoctorAvatar, updateDoctorAvatarByAdmin } from '../../actions';
 
 interface Props {
-    onSave: (url: string) => void;
-    onClose: () => void;
+  doctorId: number;
+  currentAvatar?: string | null;
+  onUpload: (url: string) => void;
+  onClose: () => void;
+  isAdmin?: boolean;
 }
 
-
 async function getCroppedImg(imgSrc: string, croppedAreaPixels: Area): Promise<Blob> {
-    const image = await new  Promise<HTMLImageElement>((resolve, reject) => {
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
     img.onerror = reject;
@@ -19,15 +22,13 @@ async function getCroppedImg(imgSrc: string, croppedAreaPixels: Area): Promise<B
   });
 
   const canvas = document.createElement('canvas');
-  const width = croppedAreaPixels.width;
-  const height = croppedAreaPixels.height;
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = croppedAreaPixels.width;
+  canvas.height = croppedAreaPixels.height;
   const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error("Canvas context not available");
+  if (!ctx) throw new Error('Canvas context not available');
 
   ctx.drawImage(
-        image,
+    image,
     croppedAreaPixels.x, croppedAreaPixels.y,
     croppedAreaPixels.width, croppedAreaPixels.height,
     0, 0,
@@ -42,45 +43,61 @@ async function getCroppedImg(imgSrc: string, croppedAreaPixels: Area): Promise<B
   });
 }
 
-export default function AvatarUploadForm({ onSave,  onClose }: Props) {
+export default function AvatarUploadForm({ doctorId, currentAvatar, onUpload, onClose, isAdmin }: Props) {
   const [file, setFile] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedImage, setCroppedImage] = useState<Area | null>(null);
-  const [showCropper, setShowCropper] = useState(false);
-  const [saving, setSaving] = useState(false);  
+  const [croppedArea, setCroppedArea] = useState<Area | null>(null);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const onFileChange = (e:React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setFile(URL.createObjectURL(file));
-    setShowCropper(true);
-    };
-
- const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
-    setCroppedImage(croppedPixels);
-  }, []);
-
-
-// When crop is confirmed, use canvas to extract the pixels:
-  const onConfirm = async () => {
-    if (!file || !croppedImage) return;
-    setSaving(true);
-    try {
-      const blob = await getCroppedImg(file, croppedImage);
-      const url = await uploadFile(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
-      await onSave(url); // ← the only line that differs between doctor and admin
-      onClose();
-    } catch {
-      // handle error
-    } finally {
-      setSaving(false);
-    }
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setFile(URL.createObjectURL(f));
   };
 
-  return( 
- <div
+  const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
+    setCroppedArea(croppedPixels);
+  }, []);
+
+  const onConfirm = async () => {
+    if (!file || !croppedArea) return;
+    setSaving(true);
+    setError('');
+    try {
+      const blob = await getCroppedImg(file, croppedArea);
+      const url = await uploadFile(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
+
+      if (isAdmin) {
+        await updateDoctorAvatarByAdmin(doctorId, url);
+      } else {
+        await updateDoctorAvatar(url);
+      }
+
+      onUpload(url);
+      onClose();
+    } catch (err) {
+    console.error('Avatar upload error:', err);
+    if (err instanceof Error) {
+      setError(`Ошибка: ${err.message}`);
+    } else {
+      setError('Ошибка загрузки фото. Попробуйте ещё раз.');
+    }
+  } finally {
+    setSaving(false);
+  }
+};
+
+  const resetFile = () => {
+    setFile(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setError('');
+  };
+
+  return (
+    <div
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
@@ -89,7 +106,6 @@ export default function AvatarUploadForm({ onSave,  onClose }: Props) {
         padding: '1rem',
       }}
     >
-      {/* Modal — stop click from closing when clicking inside */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
@@ -101,11 +117,13 @@ export default function AvatarUploadForm({ onSave,  onClose }: Props) {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <h3 style={{ margin: 0 }}>Загрузить фото</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text-muted)' }}>×</button>
+          <button
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text-muted)' }}
+          >×</button>
         </div>
 
         {!file ? (
-          // File picker
           <label style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             gap: '0.75rem', padding: '2.5rem 1rem',
@@ -122,9 +140,11 @@ export default function AvatarUploadForm({ onSave,  onClose }: Props) {
             <input type="file" accept="image/*" style={{ display: 'none' }} onChange={onFileChange} />
           </label>
         ) : (
-          // Cropper
           <>
-            <div style={{ position: 'relative', width: '100%', height: 300, borderRadius: 8, overflow: 'hidden', background: '#000' }}>
+            <div style={{
+              position: 'relative', width: '100%', height: 300,
+              borderRadius: 8, overflow: 'hidden', background: '#000',
+            }}>
               <Cropper
                 image={file}
                 crop={crop}
@@ -136,7 +156,6 @@ export default function AvatarUploadForm({ onSave,  onClose }: Props) {
               />
             </div>
 
-            {/* Zoom slider */}
             <div style={{ marginTop: '1rem' }}>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
                 Масштаб
@@ -151,8 +170,11 @@ export default function AvatarUploadForm({ onSave,  onClose }: Props) {
 
             <button
               type="button"
-              onClick={() => { setFile(null); setCrop({ x: 0, y: 0 }); setZoom(1); }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '0.5rem' }}
+              onClick={resetFile}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '0.5rem',
+              }}
             >
               ← Выбрать другое фото
             </button>
@@ -160,7 +182,9 @@ export default function AvatarUploadForm({ onSave,  onClose }: Props) {
         )}
 
         {error && (
-          <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>
+          <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>
+            {error}
+          </p>
         )}
 
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>

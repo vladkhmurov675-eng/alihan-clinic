@@ -305,14 +305,22 @@ export default function AdminDashboard({
           </div>
 
           {showDoctorForm && (
-            <DoctorForm isAdmin={isAdmin == true}
-              form={doctorForm}
-              onChange={setDoctorForm}
-              onSubmit={handleSaveDoctor}
-              onCancel={resetDoctorForm}
-              isEditing={!!editingDoctor}
-              saving={savingDoctor}
-            />
+              <DoctorForm
+                isAdmin={isAdmin}
+                form={doctorForm}
+                onChange={setDoctorForm}
+                onSubmit={handleSaveDoctor}
+                saving={savingDoctor}
+                doctorId={editingDoctor?.id}
+                currentAvatar={editingDoctor?.avatar}
+                onAvatarUpdate={(url) => {
+                  if (editingDoctor) {
+                    setDoctors(prev =>
+                      prev.map(d => d.id === editingDoctor.id ? { ...d, avatar: url } : d)
+                    );
+                  }
+                }}
+              />
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
