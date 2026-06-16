@@ -2,8 +2,7 @@
 
 import Cropper, { Area } from 'react-easy-crop';
 import { useState, useCallback } from 'react';
-import { uploadFile } from '../../lib/r2';
-import { updateDoctorAvatar, updateDoctorAvatarByAdmin } from '../../actions';
+import { uploadAndSaveAvatar} from '../../actions';
 
 interface Props {
   doctorId: number;
@@ -67,27 +66,22 @@ export default function AvatarUploadForm({ doctorId, currentAvatar, onUpload, on
     setError('');
     try {
       const blob = await getCroppedImg(file, croppedArea);
-      const url = await uploadFile(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
-
-      if (isAdmin) {
-        await updateDoctorAvatarByAdmin(doctorId, url);
-      } else {
-        await updateDoctorAvatar(url);
-      }
-
+      const formData = new FormData();
+      formData.append('file', new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
+      const url = await uploadAndSaveAvatar(formData, isAdmin ? doctorId : undefined);
       onUpload(url);
       onClose();
     } catch (err) {
-    console.error('Avatar upload error:', err);
-    if (err instanceof Error) {
-      setError(`Ошибка: ${err.message}`);
-    } else {
-      setError('Ошибка загрузки фото. Попробуйте ещё раз.');
+      console.error('Avatar upload error:', err);
+      if (err instanceof Error) {
+        setError(`Ошибка: ${err.message}`);
+      } else {
+        setError('Ошибка загрузки фото. Попробуйте ещё раз.');
+      }
+    } finally {
+      setSaving(false);
     }
-  } finally {
-    setSaving(false);
-  }
-};
+  };
 
   const resetFile = () => {
     setFile(null);
