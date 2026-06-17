@@ -67,20 +67,18 @@ export default function DoctorsListClient({ doctors }: { doctors: Doctor[] }) {
 
         {/* Search inside hero */}
         <div style={{ maxWidth: 480, margin: '1.5rem auto 0' }}>
-          <SearchBar
+          <SearchBar<Doctor>
             items={doctors}
             placeholder="Поиск врача по имени или специализации..."
-            searchFn={(doc, q) =>
-              doc.name.toLowerCase().includes(q) ||
-              doc.specialization.toLowerCase().includes(q)
-            }
-            renderItem={doc => (
+            getSearchText={doc => `${doc.name} ${doc.specialization}`}
+            getDisplayValue={doc => doc.name}
+            onSelect={doc => router.push(`/booking?doctorId=${doc.id}`)}
+            renderItem={(doc, active) => (
               <div
-                style={{ padding: '0.75rem 1.25rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
-                onClick={() => router.push(`/booking?doctorId=${doc.id}`)}
+                style={{ padding: '0.75rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
               >
                 <div style={{ width: 50, height: 36, flexShrink: 0 }}>
-                <DoctorAvatar avatar={doc.avatar} name={doc.name} size={50} color={getDoctorColor(doc.specialization)} />
+                  <DoctorAvatar avatar={doc.avatar} name={doc.name} size={50} color={getDoctorColor(doc.specialization)} />
                 </div>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{doc.name}</div>

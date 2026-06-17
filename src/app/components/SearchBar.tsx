@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 
 interface SearchBarProps<T> {
@@ -8,25 +8,42 @@ interface SearchBarProps<T> {
   getSearchText: (item: T) => string;
   renderItem: (item: T, active: boolean) => React.ReactNode;
 
+  getDisplayValue?: (item: T) => string;
+
   placeholder?: string;
   minChars?: number;
 
   onSelect?: (item: T) => void;
   onSearch?: (query: string) => void;
+  onQueryChange?: (query: string) => void;
 }
 
 export default function SearchBar<T>({
   items,
   getSearchText,
   renderItem,
+  getDisplayValue,
   placeholder = 'Поиск...',
   minChars = 1,
   onSelect,
   onSearch,
+  onQueryChange,
 }: SearchBarProps<T>) {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -37,18 +54,44 @@ export default function SearchBar<T>({
     );
   }, [query, items, getSearchText, minChars]);
 
-  // reset selection when results change
-  useEffect(() => {
+  const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setQuery(val);
     setActiveIndex(-1);
-  }, [query]);
+    setIsOpen(true);
+    onQueryChange?.(val);
+  };
 
   const handleSelect = (item: T) => {
-    onSelect?.(item);
-    setQuery('');
+    const displayVal = getDisplayValue ? getDisplayValue(item) : getSearchText(item);
+    setQuery(displayVal);
     setActiveIndex(-1);
+    setIsOpen(false);
+    onSelect?.(item);
+    onQueryChange?.(displayVal);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setIsOpen(false);
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+
+      const activeItem = results[activeIndex];
+
+      if (activeItem) {
+        handleSelect(activeItem);
+      } else {
+        setIsOpen(false);
+        onSearch?.(query.trim());
+        onQueryChange?.(query.trim());
+      }
+      return;
+    }
+
     if (!results.length) return;
 
     if (e.key === 'ArrowDown') {
@@ -60,27 +103,10 @@ export default function SearchBar<T>({
       e.preventDefault();
       setActiveIndex(i => Math.max(i - 1, 0));
     }
-
-    if (e.key === 'Enter') {
-      e.preventDefault();
-
-      const activeItem = results[activeIndex];
-
-      if (activeItem) {
-        handleSelect(activeItem);
-      } else {
-        onSearch?.(query.trim());
-      }
-    }
-
-    if (e.key === 'Escape') {
-      setQuery('');
-      setActiveIndex(-1);
-    }
   };
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div ref={containerRef} style={{ position: 'relative' }}>
       {/* INPUT */}
       <div style={{ position: 'relative' }}>
         <Search
@@ -97,8 +123,9 @@ export default function SearchBar<T>({
         <input
           ref={inputRef}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleQueryChange}
           onKeyDown={handleKeyDown}
+          onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
           className="form-control"
           style={{
@@ -110,7 +137,11 @@ export default function SearchBar<T>({
 
         {query && (
           <button
-            onClick={() => setQuery('')}
+            onClick={() => {
+              setQuery('');
+              setIsOpen(false);
+              onQueryChange?.('');
+            }}
             style={{
               position: 'absolute',
               right: 10,
@@ -127,7 +158,7 @@ export default function SearchBar<T>({
       </div>
 
       {/* DROPDOWN */}
-      {query.trim().length >= minChars && results.length > 0 && (
+      {isOpen && query.trim().length >= minChars && results.length > 0 && (
         <div
           style={{
             position: 'absolute',
@@ -164,7 +195,7 @@ export default function SearchBar<T>({
       )}
 
       {/* EMPTY STATE */}
-      {query.trim().length >= minChars && results.length === 0 && (
+      {isOpen && query.trim().length >= minChars && results.length === 0 && (
         <div
           style={{
             position: 'absolute',

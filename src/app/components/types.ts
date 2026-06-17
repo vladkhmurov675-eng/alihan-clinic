@@ -2,8 +2,8 @@ interface Doctor {
   id: number; name: string; phone: string; specialization: string;
   avatar: string | null; slotDuration: number; workStartTime: string;
   workEndTime: string; weekends: string; disabledDates: string;
-  education?: string; experienceYears?: number;
-  description?: string; createdAt: Date;
+  education?: string | null; experienceYears?: number | null;
+  description?: string | null; createdAt: Date;
 }
 
 interface Procedure {

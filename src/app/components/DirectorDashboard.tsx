@@ -6,8 +6,9 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
-import { TrendingUp, Users, Calendar, DollarSign, Filter, RefreshCw } from 'lucide-react';
+import { TrendingUp, Users, Calendar, DollarSign, Filter, RefreshCw, X } from 'lucide-react';
 import {Doctor, Procedure, Appointment} from './types';
+import SearchBar from './SearchBar';
 
 
 // ── Constants ──────────────────────────────────────────────────
@@ -388,11 +389,44 @@ export default function DirectorDashboard({
             <div className="filter-bar" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <Filter size={14} style={{ color: 'var(--text-muted)' }} />
 
-              <select className="form-control" style={{ width: 'auto', padding: '0.4rem 0.75rem', fontSize: '0.82rem' }}
-                value={filterDoctor} onChange={e => setFilterDoctor(e.target.value)}>
-                <option value="">Все врачи</option>
-                {doctors.map(d => <option key={d.id} value={d.id}>{d.name.split(' ').slice(0, 2).join(' ')}</option>)}
-              </select>
+              {/* Doctor Search */}
+              <div style={{ position: 'relative', width: '220px', zIndex: 10 }}>
+                <SearchBar<Doctor>
+                  items={doctors}
+                  placeholder="Поиск врача..."
+                  getSearchText={d => `${d.name} ${d.specialization}`}
+                  getDisplayValue={d => d.name}
+                  onSelect={d => setFilterDoctor(String(d.id))}
+                  renderItem={(d, active) => (
+                    <div style={{ padding: '0.5rem 0.75rem', display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{d.name}</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{d.specialization}</span>
+                    </div>
+                  )}
+                />
+              </div>
+
+              {filterDoctor && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.4rem 0.75rem',
+                  borderRadius: '20px',
+                  background: 'var(--color-primary)',
+                  color: '#fff',
+                  fontSize: '0.82rem',
+                  fontWeight: 600
+                }}>
+                  <span>{doctors.find(d => String(d.id) === filterDoctor)?.name}</span>
+                  <button
+                    onClick={() => setFilterDoctor('')}
+                    style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
 
               <select className="form-control" style={{ width: 'auto', padding: '0.4rem 0.75rem', fontSize: '0.82rem' }}
                 value={filterProcedure} onChange={e => setFilterProcedure(e.target.value)}>

@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { Doctor, Appointment, WhatsAppLog, DoctorFormData } from "./types";
 import DoctorForm from "./forms/DoctorForm";
+import SearchBar from "./SearchBar";
 
 
 export default function DoctorDashboard() {
@@ -45,6 +46,7 @@ export default function DoctorDashboard() {
     "appointments" | "settings" | "logs"
   >("appointments");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [dateFilter, setDateFilter] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "time" | "status">("date");
@@ -219,6 +221,16 @@ export default function DoctorDashboard() {
       setLoadingLogs(false);
     }
   };
+
+  const filteredAppointments = React.useMemo(() => {
+    return appointments.filter(appt => {
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return appt.patientName.toLowerCase().includes(q) ||
+             appt.patientPhone.toLowerCase().includes(q) ||
+             (appt.complaint && appt.complaint.toLowerCase().includes(q));
+    });
+  }, [appointments, searchQuery]);
 
   useEffect(() => {
     let cancelled = false;
@@ -457,6 +469,7 @@ export default function DoctorDashboard() {
             key={tab.key}
             onClick={() => {
               setActiveTab(tab.key);
+              setSearchQuery("");
               if (tab.key === "logs") fetchLogs();
             }}
             className="btn"
@@ -640,6 +653,27 @@ export default function DoctorDashboard() {
             </button>
           </div>
 
+          {/* Search Bar */}
+          <div style={{ marginBottom: "1.5rem", maxWidth: "480px" }}>
+            <SearchBar<Appointment>
+              key="doctor-search-appointments"
+              items={appointments}
+              placeholder="Поиск по имени, телефону или жалобе..."
+              getSearchText={appt => `${appt.patientName} ${appt.patientPhone} ${appt.complaint || ''}`}
+              getDisplayValue={appt => appt.patientName}
+              onQueryChange={setSearchQuery}
+              onSelect={appt => {}}
+              renderItem={(appt, active) => (
+                <div style={{ padding: '0.6rem 1rem', display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{appt.patientName}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {appt.date} {appt.time} · {appt.patientPhone}
+                  </span>
+                </div>
+              )}
+            />
+          </div>
+
           {loading ? (
             <div
               style={{
@@ -650,7 +684,7 @@ export default function DoctorDashboard() {
             >
               Загрузка записей...
             </div>
-          ) : appointments.length === 0 ? (
+          ) : filteredAppointments.length === 0 ? (
             <div
               className="glass-panel"
               style={{ padding: "3rem", textAlign: "center" }}
@@ -659,7 +693,9 @@ export default function DoctorDashboard() {
                 size={48}
                 style={{ color: "var(--text-muted)", marginBottom: "1rem" }}
               />
-              <h3 style={{ color: "var(--text-secondary)" }}>Нет записей</h3>
+              <h3 style={{ color: "var(--text-secondary)" }}>
+                {searchQuery ? "Ничего не найдено" : "Нет записей"}
+              </h3>
               <p
                 style={{
                   color: "var(--text-muted)",
@@ -667,14 +703,14 @@ export default function DoctorDashboard() {
                   marginTop: "0.5rem",
                 }}
               >
-                Попробуйте выбрать другую дату
+                {searchQuery ? "Попробуйте изменить поисковый запрос" : "Попробуйте выбрать другую дату"}
               </p>
             </div>
           ) : (
             <div
               style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
             >
-              {appointments.map((appt) => (
+              {filteredAppointments.map((appt) => (
                 <div
                   key={appt.id}
                   className="glass-panel"

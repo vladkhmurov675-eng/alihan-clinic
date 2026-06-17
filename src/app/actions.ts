@@ -136,9 +136,9 @@ export async function createDoctor(data: {
   name: string; phone: string; specialization: string;
   slotDuration: number; workStartTime: string; workEndTime: string;
   weekends: string; disabledDates: string; password: string;
-  education: string;
-  experienceYears: number;
-  description: string;
+  education?: string | null;
+  experienceYears?: number | null;
+  description?: string | null;
 }) {
   if (!(await isAdminLoggedIn())) throw new Error('Access denied');
   const hashed = await bcrypt.hash(data.password, 10);
@@ -193,9 +193,9 @@ export async function updateDoctorSettings(data: {
   name: string; phone: string; specialization: string;
   slotDuration: number; workStartTime: string; workEndTime: string;
   weekends: string; disabledDates: string; password?: string;
-  education: string;
-  experienceYears: number;
-  description: string;
+  education?: string | null;
+  experienceYears?: number | null;
+  description?: string | null;
 }) {
   const doctorId = await getSessionDoctorId();
   if (!doctorId) throw new Error('Unauthorized');

@@ -51,6 +51,7 @@ export default function AdminDashboard({
   const [procedures, setProcedures] = useState<Procedure[]>(initialProcedures ?? []);
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments ?? []);
   const [clinicSettings, setClinicSettings] = useState(initialSettings);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Doctor form
   const [showDoctorForm, setShowDoctorForm] = useState(false);
@@ -116,7 +117,7 @@ export default function AdminDashboard({
         }
       } else {
         
-        const result = await createDoctor({ ...doctorForm, password: doctorForm.password });
+        const result = await createDoctor({ ...doctorForm, password: doctorForm.password || '' });
         if (result.success) {
           setDoctors(prev => [...prev, result.doctor as Doctor]);
           showToast('Врач добавлен'); resetDoctorForm();
@@ -266,7 +267,7 @@ export default function AdminDashboard({
         border: '1px solid var(--border-color)',
       }}>
         {TABS.map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className="btn" style={{
+          <button key={tab.key} onClick={() => { setActiveTab(tab.key); setSearchQuery(''); }} className="btn" style={{
             flex: 1, padding: '0.65rem 1rem',
             background: activeTab === tab.key ? 'rgba(255,255,255,0.08)' : 'transparent',
             color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-muted)',
@@ -277,6 +278,86 @@ export default function AdminDashboard({
           </button>
         ))}
       </div>
+
+      {/* Search Bar */}
+      {['doctors', 'procedures', 'appointments'].includes(activeTab) && (
+        <div style={{ marginBottom: '1.5rem', maxWidth: '480px' }}>
+          {activeTab === 'doctors' && (
+            <SearchBar<Doctor>
+              key="search-doctors"
+              items={doctors}
+              placeholder="Поиск врача по имени, телефону или специализации..."
+              getSearchText={doc => `${doc.name} ${doc.specialization} ${doc.phone}`}
+              getDisplayValue={doc => doc.name}
+              onQueryChange={setSearchQuery}
+              onSelect={doc => {
+                openEditDoctor(doc);
+              }}
+              renderItem={(doc, active) => (
+                <div style={{ padding: '0.6rem 1rem', display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{doc.name}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{doc.specialization} · {doc.phone}</span>
+                </div>
+              )}
+            />
+          )}
+          {activeTab === 'procedures' && (
+            <SearchBar<Procedure>
+              key="search-procedures"
+              items={procedures}
+              placeholder="Поиск услуги по названию или врачу..."
+              getSearchText={proc => {
+                const doc = doctors.find(d => d.id === proc.doctorId);
+                return `${proc.name} ${doc?.name || ''}`;
+              }}
+              getDisplayValue={proc => proc.name}
+              onQueryChange={setSearchQuery}
+              onSelect={proc => {
+                openEditProcedure(proc);
+              }}
+              renderItem={(proc, active) => {
+                const doc = doctors.find(d => d.id === proc.doctorId);
+                return (
+                  <div style={{ padding: '0.6rem 1rem', display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{proc.name}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      {doc ? doc.name : `Врач #${proc.doctorId}`} · {proc.price.toLocaleString('ru-RU')} ₸
+                    </span>
+                  </div>
+                );
+              }}
+            />
+          )}
+          {activeTab === 'appointments' && (
+            <SearchBar<Appointment>
+              key="search-appointments"
+              items={appointments}
+              placeholder="Поиск записи по пациенту, телефону, жалобе или дате..."
+              getSearchText={appt => {
+                const doc = doctors.find(d => d.id === appt.doctorId);
+                const proc = procedures.find(p => p.id === appt.procedureId);
+                return `${appt.patientName} ${appt.patientPhone} ${appt.complaint || ''} ${appt.date} ${doc?.name || ''} ${proc?.name || ''}`;
+              }}
+              getDisplayValue={appt => appt.patientName}
+              onQueryChange={setSearchQuery}
+              onSelect={appt => {
+                openEditAppointment(appt);
+              }}
+              renderItem={(appt, active) => {
+                const doc = doctors.find(d => d.id === appt.doctorId);
+                return (
+                  <div style={{ padding: '0.6rem 1rem', display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{appt.patientName}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      {appt.date} {appt.time} · {doc?.name || `Врач #${appt.doctorId}`}
+                    </span>
+                  </div>
+                );
+              }}
+            />
+          )}
+        </div>
+      )}
 
       {/* ─── Doctors ─── */}
       {activeTab === 'doctors' && (
@@ -308,7 +389,15 @@ export default function AdminDashboard({
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {doctors.map(doc => {
+            {doctors
+              .filter(doc => {
+                if (!searchQuery) return true;
+                const q = searchQuery.toLowerCase();
+                return doc.name.toLowerCase().includes(q) ||
+                       doc.specialization.toLowerCase().includes(q) ||
+                       doc.phone.toLowerCase().includes(q);
+              })
+              .map(doc => {
               const initials = doc.name.split(' ').map((n: string) => n[0]).join('');
               const isProc = doc.specialization.includes('Процедурный');
               const specColor = isProc ? 'var(--color-accent)' : 'var(--color-primary)';
@@ -388,7 +477,15 @@ export default function AdminDashboard({
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {procedures.map(proc => {
+              {procedures
+                .filter(proc => {
+                  if (!searchQuery) return true;
+                  const q = searchQuery.toLowerCase();
+                  const doc = doctors.find(d => d.id === proc.doctorId);
+                  return proc.name.toLowerCase().includes(q) ||
+                         (doc && doc.name.toLowerCase().includes(q));
+                })
+                .map(proc => {
                 const assignedDoctor = doctors.find(d => d.id === proc.doctorId);
                 return (
                   <div key={proc.id} className="glass-panel" style={{ padding: '1.5rem' }}>
@@ -452,7 +549,20 @@ export default function AdminDashboard({
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {appointments.map(appt => {
+              {appointments
+                .filter(appt => {
+                  if (!searchQuery) return true;
+                  const q = searchQuery.toLowerCase();
+                  const doc = doctors.find(d => d.id === appt.doctorId);
+                  const proc = procedures.find(p => p.id === appt.procedureId);
+                  return appt.patientName.toLowerCase().includes(q) ||
+                         appt.patientPhone.toLowerCase().includes(q) ||
+                         (appt.complaint && appt.complaint.toLowerCase().includes(q)) ||
+                         appt.date.toLowerCase().includes(q) ||
+                         (doc && doc.name.toLowerCase().includes(q)) ||
+                         (proc && proc.name.toLowerCase().includes(q));
+                })
+                .map(appt => {
                 const doctor = doctors.find(d => d.id === appt.doctorId);
                 const procedure = procedures.find(p => p.id === appt.procedureId);
                 return (
