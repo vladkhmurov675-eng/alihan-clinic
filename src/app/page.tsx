@@ -162,7 +162,16 @@ export default async function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
             {top3Doctors.map((d) => (
               <div key={d.id} className="card" style={{ padding: '1.75rem' }}>
+                <div style={{
+                    width: 96,
+                    height: 96,
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    border: '2px solid var(--border-color)',
+                    margin: '0 0 1.25rem',
+                    }}>
                 <DoctorAvatar name={d.name} avatar={d.avatar} size={64} />
+                </div>
                 <h3 style={{ fontSize: '1.05rem', color: 'var(--color-primary)', marginBottom: '0.5rem' }}>{d.specialization}</h3>
                 <p style={{ fontSize: '0.88rem', lineHeight: 1.6, color: 'var(--text-secondary)', marginBottom: '1rem' }}>{d.description}</p>
                 <Link href={`/doctors/${d.id}`} style={{ fontSize: '0.85rem', color: 'var(--color-accent)', fontWeight: 600 }}>

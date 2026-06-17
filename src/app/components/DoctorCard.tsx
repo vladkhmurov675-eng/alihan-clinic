@@ -49,7 +49,7 @@ export default function DoctorCard({ doctor: d, color, showBookingButton = true,
           <DoctorAvatar
             avatar={d.avatar}
             name={d.name}
-            size={120}
+            size={100000}
             color={specColor}
           />
         </div>
@@ -68,12 +68,13 @@ export default function DoctorCard({ doctor: d, color, showBookingButton = true,
             style={{
               background: "var(--color-primary-glow)",
               color: specColor,
-              fontSize: "0.72rem",
+              fontSize: "1rem",
               fontWeight: 700,
               padding: "2px 10px",
               borderRadius: 20,
               display: "inline-block",
               marginBottom: "0.5rem",
+              alignSelf: "flex-start",
             }}
           >
             {d.specialization}

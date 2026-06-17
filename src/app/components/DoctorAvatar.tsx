@@ -16,14 +16,14 @@ export default function DoctorAvatar({ avatar, name, size = 52, color = 'var(--c
   return (
     <div style={{
       width: '100%', height: '100%', flexShrink: 0,
-      overflow: 'hidden', border: `2px solid ${color}44`,
+      overflow: 'hidden',
       background: `linear-gradient(135deg, ${color}22, ${color}55)`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       color, fontWeight: 700, fontSize: size * 0.3,
     }}>
       {hasPhoto
         // eslint-disable-next-line @next/next/no-img-element
-        ? <img src={avatar} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ? <img src={avatar} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 20%' }} />
         : initials || <User size={size * 0.45} />
       }
     </div>
