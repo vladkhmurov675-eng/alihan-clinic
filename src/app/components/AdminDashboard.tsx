@@ -23,7 +23,7 @@ import ProcedureForm from './forms/ProcedureForm';
 import AppointmentForm from './forms/AppointmentForm';
 import WhatsAppLogs from './WhatsAppLogs';
 import {Doctor, Procedure, Appointment, DoctorFormData, AppointmentFormData, ProcedureFormData} from './types';
-
+import SearchBar from './SearchBar';
 const BLANK_DOCTOR: DoctorFormData = {
   name: '', phone: '', specialization: '',
   slotDuration: 30, workStartTime: '07:00', workEndTime: '11:00',
@@ -116,7 +116,7 @@ export default function AdminDashboard({
         }
       } else {
         
-        const result = await createDoctor({doctorForm});
+        const result = await createDoctor({ ...doctorForm, password: doctorForm.password });
         if (result.success) {
           setDoctors(prev => [...prev, result.doctor as Doctor]);
           showToast('Врач добавлен'); resetDoctorForm();

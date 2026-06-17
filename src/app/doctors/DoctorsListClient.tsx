@@ -79,11 +79,13 @@ export default function DoctorsListClient({ doctors }: { doctors: Doctor[] }) {
                 style={{ padding: '0.75rem 1.25rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
                 onClick={() => router.push(`/booking?doctorId=${doc.id}`)}
               >
+                <div style={{ width: 50, height: 36, flexShrink: 0 }}>
                 <DoctorAvatar avatar={doc.avatar} name={doc.name} size={50} color={getDoctorColor(doc.specialization)} />
+                </div>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{doc.name}</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{doc.specialization}</div>
-                </div>
+                </div>  
               </div>
             )}
           />
