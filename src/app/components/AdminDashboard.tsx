@@ -286,10 +286,11 @@ export default function AdminDashboard({
             <SearchBar<Doctor>
               key="search-doctors"
               items={doctors}
-              placeholder="Поиск врача по имени, телефону или специализации..."
+              placeholder="Поиск врача по имени, телефону или специализации... (Enter)"
               getSearchText={doc => `${doc.name} ${doc.specialization} ${doc.phone}`}
               getDisplayValue={doc => doc.name}
-              onQueryChange={setSearchQuery}
+              onSearch={setSearchQuery}
+              onQueryChange={q => { if (!q) setSearchQuery(''); }}
               onSelect={doc => {
                 openEditDoctor(doc);
               }}
@@ -305,13 +306,14 @@ export default function AdminDashboard({
             <SearchBar<Procedure>
               key="search-procedures"
               items={procedures}
-              placeholder="Поиск услуги по названию или врачу..."
+              placeholder="Поиск услуги по названию или врачу... (Enter)"
               getSearchText={proc => {
                 const doc = doctors.find(d => d.id === proc.doctorId);
                 return `${proc.name} ${doc?.name || ''}`;
               }}
               getDisplayValue={proc => proc.name}
-              onQueryChange={setSearchQuery}
+              onSearch={setSearchQuery}
+              onQueryChange={q => { if (!q) setSearchQuery(''); }}
               onSelect={proc => {
                 openEditProcedure(proc);
               }}
@@ -332,14 +334,15 @@ export default function AdminDashboard({
             <SearchBar<Appointment>
               key="search-appointments"
               items={appointments}
-              placeholder="Поиск записи по пациенту, телефону, жалобе или дате..."
+              placeholder="Поиск записи по пациенту, телефону, жалобе или дате... (Enter)"
               getSearchText={appt => {
                 const doc = doctors.find(d => d.id === appt.doctorId);
                 const proc = procedures.find(p => p.id === appt.procedureId);
                 return `${appt.patientName} ${appt.patientPhone} ${appt.complaint || ''} ${appt.date} ${doc?.name || ''} ${proc?.name || ''}`;
               }}
               getDisplayValue={appt => appt.patientName}
-              onQueryChange={setSearchQuery}
+              onSearch={setSearchQuery}
+              onQueryChange={q => { if (!q) setSearchQuery(''); }}
               onSelect={appt => {
                 openEditAppointment(appt);
               }}
@@ -355,6 +358,18 @@ export default function AdminDashboard({
                 );
               }}
             />
+          )}
+
+          {searchQuery && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              Результаты для: <strong>«{searchQuery}»</strong>
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', fontSize: '0.82rem', padding: 0 }}
+              >
+                × Сбросить
+              </button>
+            </div>
           )}
         </div>
       )}

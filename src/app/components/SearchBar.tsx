@@ -6,16 +6,18 @@ import { Search, X } from 'lucide-react';
 interface SearchBarProps<T> {
   items: T[];
   getSearchText: (item: T) => string;
-  renderItem: (item: T, active: boolean) => React.ReactNode;
+  renderItem?: (item: T, active: boolean) => React.ReactNode;
 
   getDisplayValue?: (item: T) => string;
 
   placeholder?: string;
   minChars?: number;
+  style?: React.CSSProperties;
 
   onSelect?: (item: T) => void;
   onSearch?: (query: string) => void;
   onQueryChange?: (query: string) => void;
+  query?: string; // controlled value
 }
 
 export default function SearchBar<T>({
@@ -25,16 +27,22 @@ export default function SearchBar<T>({
   getDisplayValue,
   placeholder = 'Поиск...',
   minChars = 1,
+  style,
   onSelect,
   onSearch,
   onQueryChange,
+  query,
 }: SearchBarProps<T>) {
-  const [query, setQuery] = useState('');
+  const [internalQuery, setInternalQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(-1);
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // displayed query uses controlled prop when provided
+  const displayedQuery = query !== undefined ? query : internalQuery;
+
+  // click outside handling
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -46,17 +54,14 @@ export default function SearchBar<T>({
   }, []);
 
   const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = displayedQuery.trim().toLowerCase();
     if (q.length < minChars) return [];
-
-    return items.filter(item =>
-      getSearchText(item).toLowerCase().includes(q)
-    );
-  }, [query, items, getSearchText, minChars]);
+    return items.filter(item => getSearchText(item).toLowerCase().includes(q));
+  }, [displayedQuery, items, getSearchText, minChars]);
 
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    setQuery(val);
+    if (query === undefined) setInternalQuery(val);
     setActiveIndex(-1);
     setIsOpen(true);
     onQueryChange?.(val);
@@ -64,7 +69,7 @@ export default function SearchBar<T>({
 
   const handleSelect = (item: T) => {
     const displayVal = getDisplayValue ? getDisplayValue(item) : getSearchText(item);
-    setQuery(displayVal);
+    if (query === undefined) setInternalQuery(displayVal);
     setActiveIndex(-1);
     setIsOpen(false);
     onSelect?.(item);
@@ -76,29 +81,23 @@ export default function SearchBar<T>({
       setIsOpen(false);
       return;
     }
-
     if (e.key === 'Enter') {
       e.preventDefault();
-
       const activeItem = results[activeIndex];
-
       if (activeItem) {
         handleSelect(activeItem);
       } else {
         setIsOpen(false);
-        onSearch?.(query.trim());
-        onQueryChange?.(query.trim());
+        onSearch?.(displayedQuery.trim());
+        onQueryChange?.(displayedQuery.trim());
       }
       return;
     }
-
     if (!results.length) return;
-
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setActiveIndex(i => Math.min(i + 1, results.length - 1));
     }
-
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       setActiveIndex(i => Math.max(i - 1, 0));
@@ -119,10 +118,9 @@ export default function SearchBar<T>({
             color: 'var(--text-muted)',
           }}
         />
-
         <input
           ref={inputRef}
-          value={query}
+          value={displayedQuery}
           onChange={handleQueryChange}
           onKeyDown={handleKeyDown}
           onFocus={() => setIsOpen(true)}
@@ -131,14 +129,14 @@ export default function SearchBar<T>({
           style={{
             width: '100%',
             paddingLeft: '2.25rem',
-            paddingRight: query ? '2.25rem' : '1rem',
+            paddingRight: displayedQuery ? '2.25rem' : '1rem',
+            ...style,
           }}
         />
-
-        {query && (
+        {displayedQuery && (
           <button
             onClick={() => {
-              setQuery('');
+              if (query === undefined) setInternalQuery('');
               setIsOpen(false);
               onQueryChange?.('');
             }}
@@ -146,7 +144,7 @@ export default function SearchBar<T>({
               position: 'absolute',
               right: 10,
               top: '50%',
-              transform: 'translateY(-50%)',
+              transform: 'translateY(-5px)',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -158,7 +156,7 @@ export default function SearchBar<T>({
       </div>
 
       {/* DROPDOWN */}
-      {isOpen && query.trim().length >= minChars && results.length > 0 && (
+      {isOpen && displayedQuery.trim().length >= minChars && results.length > 0 && (
         <div
           style={{
             position: 'absolute',
@@ -176,7 +174,6 @@ export default function SearchBar<T>({
         >
           {results.map((item, i) => {
             const active = i === activeIndex;
-
             return (
               <div
                 key={i}
@@ -195,7 +192,7 @@ export default function SearchBar<T>({
       )}
 
       {/* EMPTY STATE */}
-      {isOpen && query.trim().length >= minChars && results.length === 0 && (
+      {isOpen && displayedQuery.trim().length >= minChars && results.length === 0 && (
         <div
           style={{
             position: 'absolute',

@@ -35,6 +35,7 @@ function getCategory(spec: string): string {
 export default function DoctorsListClient({ doctors }: { doctors: Doctor[] }) {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState('Все');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Build unique category list from actual doctors
   const categories = useMemo(() => {
@@ -42,10 +43,20 @@ export default function DoctorsListClient({ doctors }: { doctors: Doctor[] }) {
     return ['Все', ...Array.from(cats).sort()];
   }, [doctors]);
 
-  const filtered = useMemo(() =>
+  // Category filter first
+  const categoryFiltered = useMemo(() =>
     activeCategory === 'Все' ? doctors : doctors.filter(d => getCategory(d.specialization) === activeCategory),
     [doctors, activeCategory]
   );
+
+  // Then search filter on top of category filter
+  const filtered = useMemo(() => {
+    if (!searchQuery.trim()) return categoryFiltered;
+    const q = searchQuery.trim().toLowerCase();
+    return categoryFiltered.filter(d =>
+      d.name.toLowerCase().includes(q) || d.specialization.toLowerCase().includes(q)
+    );
+  }, [categoryFiltered, searchQuery]);
 
   return (
     <div style={{ background: 'var(--bg-primary)' }}>
@@ -73,17 +84,19 @@ export default function DoctorsListClient({ doctors }: { doctors: Doctor[] }) {
             getSearchText={doc => `${doc.name} ${doc.specialization}`}
             getDisplayValue={doc => doc.name}
             onSelect={doc => router.push(`/booking?doctorId=${doc.id}`)}
+            onSearch={q => setSearchQuery(q)}
+            onQueryChange={q => { if (!q) setSearchQuery(''); }}
             renderItem={(doc, active) => (
               <div
                 style={{ padding: '0.75rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
               >
-                <div style={{ width: 50, height: 36, flexShrink: 0 }}>
-                  <DoctorAvatar avatar={doc.avatar} name={doc.name} size={50} color={getDoctorColor(doc.specialization)} />
+                <div style={{ width: 40, height: 40, flexShrink: 0 }}>
+                  <DoctorAvatar avatar={doc.avatar} name={doc.name} color={getDoctorColor(doc.specialization)} />
                 </div>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{doc.name}</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{doc.specialization}</div>
-                </div>  
+                </div>
               </div>
             )}
           />
@@ -142,10 +155,21 @@ export default function DoctorsListClient({ doctors }: { doctors: Doctor[] }) {
       </div>
 
       {/* Doctors grid */}
-      <section style={{ maxWidth: 1200, margin: '2rem auto', padding: '2.5rem 1.5rem' }}>
+      <section style={{ maxWidth: 1200, margin: '1rem auto', padding: '1rem 1.5rem' }}>
+        {searchQuery && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+            Результаты для: <strong>«{searchQuery}»</strong>
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', fontSize: '0.85rem', padding: 0 }}
+            >
+              × Сбросить
+            </button>
+          </div>
+        )}
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-            Врачи в этой категории не найдены
+            {searchQuery ? `По запросу «${searchQuery}» ничего не найдено` : 'Врачи в этой категории не найдены'}
           </div>
         ) : (
           <div style={{

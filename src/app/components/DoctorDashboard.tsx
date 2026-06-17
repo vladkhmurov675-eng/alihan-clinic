@@ -658,10 +658,11 @@ export default function DoctorDashboard() {
             <SearchBar<Appointment>
               key="doctor-search-appointments"
               items={appointments}
-              placeholder="Поиск по имени, телефону или жалобе..."
+              placeholder="Поиск по имени, телефону или жалобе... (Enter)"
               getSearchText={appt => `${appt.patientName} ${appt.patientPhone} ${appt.complaint || ''}`}
               getDisplayValue={appt => appt.patientName}
-              onQueryChange={setSearchQuery}
+              onSearch={setSearchQuery}
+              onQueryChange={q => { if (!q) setSearchQuery(''); }}
               onSelect={appt => {}}
               renderItem={(appt, active) => (
                 <div style={{ padding: '0.6rem 1rem', display: 'flex', flexDirection: 'column' }}>
@@ -673,6 +674,18 @@ export default function DoctorDashboard() {
               )}
             />
           </div>
+
+          {searchQuery && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              Результаты для: <strong>«{searchQuery}»</strong>
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', fontSize: '0.82rem', padding: 0 }}
+              >
+                × Сбросить
+              </button>
+            </div>
+          )}
 
           {loading ? (
             <div
