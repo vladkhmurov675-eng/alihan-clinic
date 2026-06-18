@@ -58,6 +58,8 @@ body {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
+  scrollbar-gutter: stable;
+  overflow-y: scroll;
 }
 
 main {
