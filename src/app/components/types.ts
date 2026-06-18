@@ -13,9 +13,9 @@ interface Procedure {
 interface Appointment {
   id: number; doctorId: number; patientName: string; patientPhone: string;
   complaint: string; date: string; time: string; filePath: string | null;
-  status: string; price: number; procedureId: number; createdAt: Date;
-  doctor: { id: number; name: string; specialization: string };
-  procedure: { id: number; name: string; price: number };
+  status: string; price: number | null; procedureId: number | null; createdAt: Date;
+  doctor: Doctor;
+  procedure: Procedure | null;
 };
 
 interface Setting {

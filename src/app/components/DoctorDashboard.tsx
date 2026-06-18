@@ -3,7 +3,7 @@
 import React, {
   useState,
   useEffect,
-  useCallback,
+  useCallback, useMemo,
   type SyntheticEvent,
 } from "react";
 import {
@@ -19,22 +19,23 @@ import {
   LogOut,
   Calendar,
   Clock,
-  User,
-  Phone,
   CheckCircle,
-  XCircle,
-  FileText,
   Settings,
   MessageCircle,
   Activity,
   ClipboardList,
 } from "lucide-react";
+import {useRouter, usePathname, useSearchParams} from 'next/navigation';
 import { Doctor, Appointment, WhatsAppLog, DoctorFormData } from "./types";
 import DoctorForm from "./forms/DoctorForm";
 import SearchBar from "./SearchBar";
+import AppointmentList from "./AppointmentList";
 
 
 export default function DoctorDashboard() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -42,9 +43,17 @@ export default function DoctorDashboard() {
   const [loggingIn, setLoggingIn] = useState(false);
 
   // Dashboard state
-  const [activeTab, setActiveTab] = useState<
-    "appointments" | "settings" | "logs"
-  >("appointments");
+  const params = useMemo(() => Object.fromEntries(searchParams.entries()), [searchParams]);
+
+    const {
+      tab = 'appointments',
+      search = '',
+      status = '',
+      date = '',
+      time = '',
+      from = '',
+      to = '',
+    } = params;
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -93,6 +102,7 @@ export default function DoctorDashboard() {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
+  
 
   const handleLogin = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -118,73 +128,38 @@ export default function DoctorDashboard() {
     setIsLoggedIn(false);
     setPassword("");
     setAppointments([]);
-    setDoctorProfile(null);
-    setActiveTab("appointments");
+    setDoctorProfile(null);  
   };
+
+
+  const setFilter = useCallback((key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set(key, value)
+    } else {
+      params.delete(key);
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router]);
+
+  const switchTab = (newTab: string) => {
+  const newParams = new URLSearchParams();
+  newParams.set('tab', newTab);
+  router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+};
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
     try {
-      // Only pass a specific date to the server when in 'date' mode
-      const serverDate =
-        filterMode === "date" ? dateFilter || undefined : undefined;
-      const appts = await getDoctorAppointments(serverDate);
-      let data = [...(appts as Appointment[])];
-
-      // Client-side month filter
-      if (filterMode === "month" && monthFilter) {
-        data = data.filter((a) => a.date.startsWith(monthFilter)); // e.g. "2026-06"
-      }
-
-      // Client-side year filter
-      if (filterMode === "year" && yearFilter) {
-        data = data.filter((a) => a.date.startsWith(yearFilter)); // e.g. "2026"
-      }
-
-      // Client-side time filter
-      if (timeFilter) {
-        data = data.filter((a) => a.time.startsWith(timeFilter));
-      }
-
-      // Client-side status filter
-      if (statusFilter) {
-        data = data.filter((a) => a.status === statusFilter);
-      }
-
-      // Sorting (keep your existing switch)
-      switch (sortBy) {
-        case "status":
-          data.sort((a, b) => a.status.localeCompare(b.status));
-          break;
-
-        case "time":
-          data.sort((a, b) => a.time.localeCompare(b.time));
-          break;
-
-        case "date":
-        default:
-          data.sort(
-            (a, b) =>
-              b.date.localeCompare(a.date) || a.time.localeCompare(b.time),
-          );
-      }
-
-      setAppointments(data);
+      const appts = await getDoctorAppointments({status, search, date, time, from, to});
+        setAppointments(appts);
     } catch (err) {
       console.error("Error fetching appointments:", err);
       showToast("Ошибка загрузки записей", "error");
     } finally {
       setLoading(false);
     }
-  }, [
-    dateFilter,
-    filterMode,
-    monthFilter,
-    yearFilter,
-    timeFilter,
-    statusFilter,
-    sortBy,
-  ]);
+  }, [status, search, date, time, from, to]);
 
   const fetchDoctorProfile = useCallback(async () => {
     try {
@@ -222,30 +197,28 @@ export default function DoctorDashboard() {
     }
   };
 
-  const filteredAppointments = React.useMemo(() => {
-    return appointments.filter(appt => {
-      if (!searchQuery) return true;
-      const q = searchQuery.toLowerCase();
-      return appt.patientName.toLowerCase().includes(q) ||
-             appt.patientPhone.toLowerCase().includes(q) ||
-             (appt.complaint && appt.complaint.toLowerCase().includes(q));
-    });
-  }, [appointments, searchQuery]);
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+        const doctor = await getCurrentDoctor();
+        if (cancelled) return;
+        if (!doctor) return;
+        setDoctorProfile(doctor);
+      }
+
+      run();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-
     const load = async () => {
       if (!cancelled) await fetchAppointments();
-      if (!cancelled) await fetchDoctorProfile();
     };
-
     load();
+    return () => { cancelled = true; };
+  }, [fetchAppointments]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [fetchAppointments, fetchDoctorProfile]);
   const handleStatusChange = async (
     appointmentId: number,
     newStatus: string,
@@ -288,21 +261,6 @@ export default function DoctorDashboard() {
     }
   };
 
-
-
-  const statusLabels: Record<string, string> = {
-    PENDING: "Ожидает",
-    CONFIRMED: "Подтверждён",
-    COMPLETED: "Завершён",
-    CANCELLED: "Отменён",
-  };
-
-  const statusBadgeClass: Record<string, string> = {
-    PENDING: "badge-pending",
-    CONFIRMED: "badge-confirmed",
-    COMPLETED: "badge-completed",
-    CANCELLED: "badge-cancelled",
-  };
 
   // ────────────────── LOGIN SCREEN ──────────────────
 
@@ -464,39 +422,39 @@ export default function DoctorDashboard() {
             label: "WhatsApp Логи",
             icon: <MessageCircle size={16} />,
           },
-        ].map((tab) => (
+        ].map((t) => (
           <button
-            key={tab.key}
+            key={t.key}
             onClick={() => {
-              setActiveTab(tab.key);
+              switchTab(t.key);
               setSearchQuery("");
-              if (tab.key === "logs") fetchLogs();
+              if (t.key === "logs") fetchLogs();
             }}
             className="btn"
             style={{
               flex: 1,
               padding: "0.65rem 1rem",
               background:
-                activeTab === tab.key
+                t.key
                   ? "rgba(255,255,255,0.08)"
                   : "transparent",
               color:
-                activeTab === tab.key
+                t.key
                   ? "var(--text-primary)"
                   : "var(--text-muted)",
               border: "none",
               borderRadius: "10px",
-              fontWeight: activeTab === tab.key ? 700 : 500,
+              fontWeight: t.key ? 700 : 500,
               transition: "all 0.2s ease",
             }}
           >
-            {tab.icon} {tab.label}
+            {t.icon} {t.label}
           </button>
         ))}
       </div>
 
       {/* ─── TAB: Appointments ─── */}
-      {activeTab === "appointments" && (
+      {tab === "appointments" && (
         <div className="animate-fade-in">
           {/* Date selector */}
           <div
@@ -697,7 +655,7 @@ export default function DoctorDashboard() {
             >
               Загрузка записей...
             </div>
-          ) : filteredAppointments.length === 0 ? (
+          ) : appointments.length === 0 ? (
             <div
               className="glass-panel"
               style={{ padding: "3rem", textAlign: "center" }}
@@ -719,216 +677,19 @@ export default function DoctorDashboard() {
                 {searchQuery ? "Попробуйте изменить поисковый запрос" : "Попробуйте выбрать другую дату"}
               </p>
             </div>
-          ) : (
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-            >
-              {filteredAppointments.map((appt) => (
-                <div
-                  key={appt.id}
-                  className="glass-panel"
-                  style={{
-                    padding: "1.5rem",
-                    borderLeft: `3px solid ${
-                      appt.status === "CONFIRMED"
-                        ? "var(--color-accent)"
-                        : appt.status === "COMPLETED"
-                          ? "var(--color-primary)"
-                          : appt.status === "CANCELLED"
-                            ? "var(--color-danger)"
-                            : "var(--color-warning)"
-                    }`,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      flexWrap: "wrap",
-                      gap: "1rem",
-                    }}
-                  >
-                    {/* Left side: patient info */}
-                    <div style={{ flex: 1, minWidth: "250px" }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                          marginBottom: "0.5rem",
-                        }}
-                      >
-                        <Clock
-                          size={14}
-                          style={{ color: "var(--color-accent)" }}
-                        />
-                        <span style={{ fontWeight: 700, fontSize: "1.1rem" }}>
-                          {appt.date},{appt.time}
-                        </span>
-                        <span
-                          className={`badge ${statusBadgeClass[appt.status]}`}
-                        >
-                          {statusLabels[appt.status]}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                          marginBottom: "0.35rem",
-                        }}
-                      >
-                        <User
-                          size={14}
-                          style={{ color: "var(--text-muted)" }}
-                        />
-                        <span style={{ fontWeight: 600 }}>
-                          {appt.patientName}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                          marginBottom: "0.35rem",
-                        }}
-                      >
-                        <Phone
-                          size={14}
-                          style={{ color: "var(--text-muted)" }}
-                        />
-                        <span
-                          style={{
-                            color: "var(--text-secondary)",
-                            fontSize: "0.9rem",
-                          }}
-                        >
-                          {appt.patientPhone}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          marginTop: "0.5rem",
-                          fontSize: "0.9rem",
-                          color: "var(--text-secondary)",
-                        }}
-                      >
-                        <strong>Жалоба:</strong> {appt.complaint}
-                      </div>
-                      {appt.filePath && (
-                        <a
-                          href={appt.filePath}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "0.35rem",
-                            marginTop: "0.5rem",
-                            color: "var(--color-accent)",
-                            fontSize: "0.85rem",
-                            textDecoration: "underline",
-                          }}
-                        >
-                          <FileText size={14} /> Прикрепленный файл
-                        </a>
-                      )}
-                    </div>
-
-                    {/* Right side: action buttons */}
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "0.5rem",
-                        minWidth: "150px",
-                      }}
-                    >
-                      {appt.status === "PENDING" && (
-                        <>
-                          <button
-                            onClick={() =>
-                              handleStatusChange(appt.id, "CONFIRMED")
-                            }
-                            className="btn btn-accent"
-                            style={{
-                              padding: "0.5rem 1rem",
-                              fontSize: "0.85rem",
-                            }}
-                          >
-                            <CheckCircle size={14} /> Подтвердить
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleStatusChange(appt.id, "CANCELLED")
-                            }
-                            className="btn btn-danger"
-                            style={{
-                              padding: "0.5rem 1rem",
-                              fontSize: "0.85rem",
-                            }}
-                          >
-                            <XCircle size={14} /> Отменить
-                          </button>
-                        </>
-                      )}
-                      {appt.status === "CONFIRMED" && (
-                        <>
-                          <button
-                            onClick={() =>
-                              handleStatusChange(appt.id, "COMPLETED")
-                            }
-                            className="btn btn-primary"
-                            style={{
-                              padding: "0.5rem 1rem",
-                              fontSize: "0.85rem",
-                            }}
-                          >
-                            <CheckCircle size={14} /> Завершить
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleStatusChange(appt.id, "CANCELLED")
-                            }
-                            className="btn btn-danger"
-                            style={{
-                              padding: "0.5rem 1rem",
-                              fontSize: "0.85rem",
-                            }}
-                          >
-                            <XCircle size={14} /> Отменить
-                          </button>
-                        </>
-                      )}
-                      {(appt.status === "COMPLETED" ||
-                        appt.status === "CANCELLED") && (
-                        <span
-                          style={{
-                            fontSize: "0.8rem",
-                            color: "var(--text-muted)",
-                            textAlign: "center",
-                          }}
-                        >
-                          Завершено
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          ) : (<AppointmentList appointments={appointments}
+                onStatusChange={handleStatusChange}></AppointmentList>
+            )}
         </div>
       )}
 
       {/* ─── TAB: Settings ─── */}
-      {activeTab === "settings" && (
+      {tab === "settings" && (
         <div className="animate-fade-in">
           <DoctorForm
             isAdmin={false}
+            doctorId={doctorProfile?.id}
+            currentAvatar={doctorProfile?.avatar}
             form={settingsForm}
             onChange={setSettingsForm}
             onSubmit={handleSaveSettings}
@@ -938,7 +699,7 @@ export default function DoctorDashboard() {
       )}
 
       {/* ─── TAB: WhatsApp Logs ─── */}
-      {activeTab === "logs" && (
+      {tab === "logs" && (
         <div className="animate-fade-in">
           {loadingLogs ? (
             <div

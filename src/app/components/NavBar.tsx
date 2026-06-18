@@ -119,7 +119,7 @@ export default function NavBar() {
             color: '#fff', fontWeight: 800, fontSize: '1.1rem',
             boxShadow: '0 2px 10px rgba(0,175,190,0.25)',
             flexShrink: 0,
-          }}>А</span>
+          }}>🇨🇭</span>
           <span style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
             Клиника <span style={{ color: 'var(--color-primary)' }}>«Алихан»</span>
           </span>
@@ -133,7 +133,7 @@ export default function NavBar() {
               <Link key={l.href} href={l.href} className="nav-link" style={{
                 fontSize: '0.85rem',
                 fontWeight: active ? 700 : 500,
-                color: active ? 'var(--color-primary)' : 'var(--text-secondary)',
+                color: 'var(--text-secondary)',
                 padding: '0.4rem 0.75rem',
                 borderRadius: 6,
                 background: active ? 'var(--color-primary-glow)' : 'transparent',

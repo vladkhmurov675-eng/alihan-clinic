@@ -379,7 +379,14 @@ export async function sendWhatsAppNotification(appointment: { patientName: strin
   await sendWhatsAppMessage(appointment.patientPhone, message);
 }
 
-export async function getDoctorAppointments(date?: string) {
+export async function getDoctorAppointments(filters?: {
+  status?: string;
+  date?: string;
+  time?: string;
+  from?: string;
+  to?: string;
+  search?: string;
+}) {
   const doctorId = await getSessionDoctorId();
 
   if (!doctorId) {
@@ -389,8 +396,18 @@ export async function getDoctorAppointments(date?: string) {
   return prisma.appointment.findMany({
     where: {
       doctorId,
-      ...(date ? { date } : {}),
+      ...(filters?.status && {status: filters.status}),
+      ...(filters?.date && {date: filters.date}),
+      ...(filters?.from && filters.to && {date: { gte: filters.from, lte: filters.to}}),
+      ...(filters?.time && {time: filters.time}),
+      ...(filters?.search && {
+        OR: [
+          { patientName: { contains: filters.search, mode: 'insensitive'}},
+          { patinetPhone: { contains: filters.search}}
+        ]
+      })
     },
+    include: { doctor: true, procedure: true },
     orderBy: [
       { date: 'desc' },
       { time: 'asc' },

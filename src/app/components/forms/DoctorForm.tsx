@@ -39,7 +39,56 @@ export default function DoctorForm({
   return (
     <>
       {ToastComponent}
-      <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
+      <div style={{ display: 'grid', gap: '2rem', alignItems: 'flex-start' }}>
+         {/* ── Avatar section ── */}
+        <div style={{ width: 200, flexShrink: 0, marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+          <div style= {{}}>
+          <DoctorAvatar
+            name={form.name || 'Н И'}
+            avatar={currentAvatar}
+            size={200}
+          /> 
+          </div>
+          {doctorId ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowAvatarForm(v => !v)}
+                className="btn btn-secondary"
+                style={{ display: 'block', width: '100%', marginTop: '0.75rem', fontSize: '0.85rem' }}
+              >
+                {showAvatarForm ? 'Скрыть' : 'Изменить фото'}
+              </button>
+
+              {showAvatarForm && (
+                <AvatarUploadForm
+                  isAdmin={isAdmin}
+                  doctorId={doctorId}
+                  currentAvatar={currentAvatar}
+                  onUpload={(newUrl: string) => {
+                    onAvatarUpdate?.(newUrl);
+                    showToast('Аватар обновлён', 'success');
+                    setShowAvatarForm(false);
+                  }}
+                  onClose={() => setShowAvatarForm(false)}
+                />
+              )}
+            </>
+          ) : (
+            <p style={{
+              fontSize: '0.78rem',
+              color: 'var(--text-muted)',
+              marginTop: '0.75rem',
+              textAlign: 'center',
+              lineHeight: 1.5,
+            }}>
+              Фото можно добавить после создания врача
+            </p>
+          )}
+        </div>
+
+      </div>
+
 
         {/* ── Main form ── */}
         <form onSubmit={onSubmit} style={{ flex: 1 }}>
@@ -197,53 +246,7 @@ export default function DoctorForm({
           </button>
         </form>
 
-        {/* ── Avatar section ── */}
-        <div style={{ width: 200, flexShrink: 0, marginTop: '0.5rem' }}>
-          <DoctorAvatar
-            name={form.name || 'Н И'}
-            avatar={currentAvatar}
-            size={200}
-          />
-
-          {doctorId ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setShowAvatarForm(v => !v)}
-                className="btn btn-secondary"
-                style={{ display: 'block', width: '100%', marginTop: '0.75rem', fontSize: '0.85rem' }}
-              >
-                {showAvatarForm ? 'Скрыть' : 'Изменить фото'}
-              </button>
-
-              {showAvatarForm && (
-                <AvatarUploadForm
-                  isAdmin={isAdmin}
-                  doctorId={doctorId}
-                  currentAvatar={currentAvatar}
-                  onUpload={(newUrl: string) => {
-                    onAvatarUpdate?.(newUrl);
-                    showToast('Аватар обновлён', 'success');
-                    setShowAvatarForm(false);
-                  }}
-                  onClose={() => setShowAvatarForm(false)}
-                />
-              )}
-            </>
-          ) : (
-            <p style={{
-              fontSize: '0.78rem',
-              color: 'var(--text-muted)',
-              marginTop: '0.75rem',
-              textAlign: 'center',
-              lineHeight: 1.5,
-            }}>
-              Фото можно добавить после создания врача
-            </p>
-          )}
-        </div>
-
-      </div>
+       
     </>
   );
 }
