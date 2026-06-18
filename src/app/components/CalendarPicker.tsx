@@ -100,8 +100,26 @@ export const CalendarPicker = ({ submit }: Props) => {
 
 
     return (
-        <div className = 'form-container'>
-            
+        <div className="form-container">
+            <div className="wheel" onWheel={handleScroll} onClick={handleClick}>
+                <div
+                    className="wheel-inner"
+                    style={{ transform: `translateY(${-index * 40 + 80}px)` }}
+                >
+                    {options.map((opt, i) => (
+                        <div
+                            key={i}
+                            className={`wheel-item ${i === index ? "active" : ""}`}
+                        >
+                            {step === "month" ? (opt as any).label : opt}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <button onClick={handleSelect}>
+                {step === "day" ? "Подтвердить" : "Далее"}
+            </button>
         </div>
     )
 
