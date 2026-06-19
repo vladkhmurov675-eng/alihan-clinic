@@ -386,12 +386,25 @@ export async function getDoctorAppointments(filters?: {
   from?: string;
   to?: string;
   search?: string;
+  sortBy?: "date" | "time" | "status";
+  sortDir?: "asc" | "desc";
 }) {
   const doctorId = await getSessionDoctorId();
 
   if (!doctorId) {
     throw new Error('Unauthorized');
   }
+
+  const sortBy = filters?.sortBy ?? "date";
+  const sortDir = filters?.sortDir ?? "desc";
+
+   const orderBy =
+    sortBy === "status"
+      ? { status: sortDir }
+      : sortBy === "time"
+        ? { time: sortDir }
+        : { date: sortDir };
+
 
   return prisma.appointment.findMany({
     where: {
@@ -408,10 +421,7 @@ export async function getDoctorAppointments(filters?: {
       })
     },
     include: { doctor: true, procedure: true },
-    orderBy: [
-      { date: 'desc' },
-      { time: 'asc' },
-    ],
+    orderBy
   });
 }
 

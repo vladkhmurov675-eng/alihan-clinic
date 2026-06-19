@@ -55,15 +55,16 @@ export default function DoctorDashboard() {
       time = '',
       from = '',
       to = '',
+      sortBy = '',
     } = params;
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sortBy, setSortBy] = useState<"date" | "time" | "status">("date");
   const [timeFilter, setTimeFilter] = useState(""); // "07:00"
   const [statusFilter, setStatusFilter] = useState(""); // "CONFIRMED" | ""
   const [doctorProfile, setDoctorProfile] = useState<Doctor | null>(null);
   const [showFilter, setShowFilter] = useState(false); // Settings form state
+  const [range, setRange] = useState<"date" | "range">("date");
   const [settingsForm, setSettingsForm] = useState<DoctorFormData>({
     name: "",
     phone: "",
@@ -146,7 +147,7 @@ export default function DoctorDashboard() {
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
     try {
-      const appts = await getDoctorAppointments({status, search, date, time, from, to});
+      const appts = await getDoctorAppointments({status, search, date, time, from, to, sortBy});
         setAppointments(appts);
     } catch (err) {
       console.error("Error fetching appointments:", err);
@@ -154,7 +155,7 @@ export default function DoctorDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [status, search, date, time, from, to]);
+  }, [status, search, date, time, from, to, sortBy]);
 
   const fetchDoctorProfile = useCallback(async () => {
     try {
@@ -458,6 +459,9 @@ export default function DoctorDashboard() {
           {/* Date selector */}
           {showFilter &&(
             <>
+          
+          
+          
           <div
             style={{
               display: "flex",
@@ -467,11 +471,20 @@ export default function DoctorDashboard() {
               flexWrap: "wrap",
             }}
           >
-            <CalendarPickerInput value={date}
-              onChange={(v) => setFilter('date',v)
-
-              }/>
+            <button className = 'btn-text' style={{fontSize: "16px"}} onClick={() => setRange(prev => (prev === "date" ? "range" : "date"))}>
+            {range === "date" ? "Дата" : "Период"}
+          </button>
             
+            {range === "date" && (
+            <CalendarPickerInput value={date}
+              onChange={(v) => setFilter('date',v)}/>)}
+            
+            {range === "range" && (<> С
+              <input className = "form-control" type='date' value={from} onChange = {(e) => setFilter("from", e.target.value)}/>
+              По
+              <input className = "form-control" type='date' value={to} onChange = {(e) => setFilter("to", e.target.value)}/> 
+            </>)}
+
             {/* Time filter */}
             <input
               type="time"
@@ -501,7 +514,7 @@ export default function DoctorDashboard() {
               className="form-control"
               value={sortBy}
               onChange={(e) =>
-                setSortBy(e.target.value as "date" | "time" | "status")
+                setFilter('sortBy', e.target.value as "date" | "time" | "status")
               }
               style={{ width: "auto" }}
             >
