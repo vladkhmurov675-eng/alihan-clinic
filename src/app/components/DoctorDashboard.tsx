@@ -23,7 +23,7 @@ import {
   Settings,
   MessageCircle,
   Activity,
-  ClipboardList,
+  ClipboardList, ArrowDown 
 } from "lucide-react";
 import {useRouter, usePathname, useSearchParams} from 'next/navigation';
 import { Doctor, Appointment, WhatsAppLog, DoctorFormData } from "./types";
@@ -59,18 +59,11 @@ export default function DoctorDashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [dateFilter, setDateFilter] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "time" | "status">("date");
-  const [filterMode, setFilterMode] = useState<
-    "all" | "date" | "month" | "year"
-  >("date");
-  const [monthFilter, setMonthFilter] = useState(""); // "2026-06"
-  const [yearFilter, setYearFilter] = useState(""); // "2026"
   const [timeFilter, setTimeFilter] = useState(""); // "07:00"
   const [statusFilter, setStatusFilter] = useState(""); // "CONFIRMED" | ""
   const [doctorProfile, setDoctorProfile] = useState<Doctor | null>(null);
-  const [showCalendar, setShowCalendar] = useState(false);
-  // Settings form state
+  const [showFilter, setShowFilter] = useState(false); // Settings form state
   const [settingsForm, setSettingsForm] = useState<DoctorFormData>({
     name: "",
     phone: "",
@@ -397,7 +390,7 @@ export default function DoctorDashboard() {
       </div>
 
       {/* Tabs */}
-      <div
+      <div className = 'tab-bar'
         style={{
           display: "flex",
           gap: "0.25rem",
@@ -458,7 +451,13 @@ export default function DoctorDashboard() {
       {/* ─── TAB: Appointments ─── */}
       {tab === "appointments" && (
         <div className="animate-fade-in">
+          <button className = 'btn-icon' style={{marginBottom: '16px'}} onClick={() => setShowFilter(!showFilter)}>Фильтры
+            <ArrowDown style={{transform: showFilter ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease"}}/>
+          </button>
+          {/* Filters */}
           {/* Date selector */}
+          {showFilter &&(
+            <>
           <div
             style={{
               display: "flex",
@@ -469,7 +468,9 @@ export default function DoctorDashboard() {
             }}
           >
             <CalendarPickerInput value={date}
-              onChange={(v) => setFilter('date',v)}/>
+              onChange={(v) => setFilter('date',v)
+
+              }/>
             
             {/* Time filter */}
             <input
@@ -477,7 +478,7 @@ export default function DoctorDashboard() {
               className="form-control"
               style={{ width: "auto" }}
               value={timeFilter}
-              onChange={(e) => setTimeFilter(e.target.value)}
+              onChange={(e) => setFilter('time', e.target.value)}
               title="Фильтр по времени"
             />
 
@@ -486,7 +487,7 @@ export default function DoctorDashboard() {
               className="form-control"
               style={{ width: "auto" }}
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => setFilter('status', e.target.value)}
             >
               <option value="">Все статусы</option>
               <option value="PENDING">Ожидает</option>
@@ -516,9 +517,10 @@ export default function DoctorDashboard() {
             >
               Обновить
             </button>
-          </div>
+          </div></> )} 
 
-          {/* Search Bar */}
+         {/* Search Bar */}
+          
           <div style={{ marginBottom: "1.5rem", maxWidth: "480px" }}>
             <SearchBar<Appointment>
               key="doctor-search-appointments"
@@ -526,8 +528,7 @@ export default function DoctorDashboard() {
               placeholder="Поиск по имени, телефону или жалобе... (Enter)"
               getSearchText={appt => `${appt.patientName} ${appt.patientPhone} ${appt.complaint || ''}`}
               getDisplayValue={appt => appt.patientName}
-              onSearch={setSearchQuery}
-              onQueryChange={q => { if (!q) setSearchQuery(''); }}
+              onSearch={(q) => setFilter('search', q)}
               onSelect={appt => {}}
               renderItem={(appt, active) => (
                 <div style={{ padding: '0.6rem 1rem', display: 'flex', flexDirection: 'column' }}>
@@ -539,7 +540,7 @@ export default function DoctorDashboard() {
               )}
             />
           </div>
-
+        
           {searchQuery && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
               Результаты для: <strong>«{searchQuery}»</strong>
@@ -550,8 +551,8 @@ export default function DoctorDashboard() {
                 × Сбросить
               </button>
             </div>
-          )}
-
+          )} 
+        
           {loading ? (
             <div
               style={{

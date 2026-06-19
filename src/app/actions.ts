@@ -403,7 +403,7 @@ export async function getDoctorAppointments(filters?: {
       ...(filters?.search && {
         OR: [
           { patientName: { contains: filters.search, mode: 'insensitive'}},
-          { patinetPhone: { contains: filters.search}}
+          { patientPhone: { contains: filters.search}}
         ]
       })
     },

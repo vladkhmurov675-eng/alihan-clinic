@@ -1,5 +1,4 @@
 :root {
-  /* ── Green / nature / health palette ── */
   --bg-primary: #f4f8f4;
   --bg-secondary: #e8f0e8;
   --bg-card: #ffffff;
@@ -10,6 +9,7 @@
   --text-primary: #1a2e1a;
   --text-secondary: #4a6b4a;
   --text-muted: #7a9a7a;
+  --text-active: #ffffff; 
 
   /* Dark forest green — primary */
   --color-primary: #00afbe ;
@@ -171,7 +171,7 @@ h6 {
   height: 200px;
   width: 160px;
   overflow: hidden;
-  position: absolute;
+  position: relative;
   border-radius: 12px;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
@@ -185,7 +185,7 @@ h6 {
   justify-content: center;
 
   font-size: 1rem;
-  color: var(--text-secondary);
+  color: var(--text-primary);
 
   opacity: 0.4;
   transition: all 0.2s ease;
@@ -194,7 +194,8 @@ h6 {
 /* selected item */
 .wheel-item.active {
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--text-active);
+  background-color: var(--color-primary);
   opacity: 1;
   transform: scale(1.1);
 }
@@ -213,6 +214,46 @@ h6 {
   border: 1px solid transparent;
   transition: all 0.2s ease;
   text-decoration: none;
+}
+
+
+.btn-icon {
+  position: relative; 
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: '16px';
+  background: none;
+  border: none;
+  padding: 6px 10px;
+
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+/* underline */
+.btn-icon::after {
+  content: "";
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  height: 2px;
+  background-color: #00befa;
+
+  transform: scaleX(0);
+  transform-origin: left;
+
+  transition: transform 0.25s ease;
+}
+
+.btn-icon:hover::after {
+  transform: scaleX(1);
 }
 
 .btn-primary {
@@ -586,3 +627,4 @@ h6 {
     transform: none !important;
   }
 }
+

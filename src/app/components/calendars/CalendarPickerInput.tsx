@@ -12,6 +12,7 @@ interface Props {
 
 export default function CalendarPickerInput({ value, onChange, placeholder = 'Выбрать дату' }: Props) {
   const [open, setOpen] = useState(false);
+  const [showValue, setShowValue] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click — same pattern used in SearchBar
@@ -30,9 +31,14 @@ export default function CalendarPickerInput({ value, onChange, placeholder = 'В
     setOpen(false);
   };
 
+  const handleNext = (dateParam: string) =>{
+    setShowValue(dateParam);
+  }
+
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     onChange('');
+    setShowValue('');
   };
 
   return (
@@ -41,7 +47,7 @@ export default function CalendarPickerInput({ value, onChange, placeholder = 'В
         onClick={() => setOpen(v => !v)}
         className="form-control"
         style={{
-          width: 'auto',
+          width: '100%',
           minWidth: 160,
           display: 'flex',
           alignItems: 'center',
@@ -50,8 +56,8 @@ export default function CalendarPickerInput({ value, onChange, placeholder = 'В
         }}
       >
         <CalendarIcon size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-        <span style={{ color: value ? 'var(--text-primary)' : 'var(--text-muted)', flex: 1 }}>
-          {value || placeholder}
+        <span style={{ color: value || showValue ? 'var(--text-primary)' : 'var(--text-muted)', flex: 1 }}>
+          {value || showValue || placeholder}
         </span>
         {value && (
           <button
@@ -68,6 +74,7 @@ export default function CalendarPickerInput({ value, onChange, placeholder = 'В
         <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 100 }}>
           <CalendarPicker
             onSubmit={handleSubmit}
+            onNext={handleNext}
             onClose={() => setOpen(false)}
           />
         </div>

@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 
 interface Props {
   onSubmit: (dateParam: string) => void; // "2026" | "2026-03" | "2026-03-15"
+  onNext: (dateParam: string) => void;
   onClose: () => void;
   initialStep?: Step;
 }
@@ -44,11 +45,12 @@ function getOptionLabel(option: number | MonthOption): string {
   return typeof option === 'number' ? String(option) : option.label;
 }
 
-export default function CalendarPicker({ onSubmit, onClose, initialStep = 'year' }: Props) {
+export default function CalendarPicker({ onSubmit, onNext, onClose, initialStep = 'year' }: Props) {
   const [step, setStep] = useState<Step>(initialStep);
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(1);
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(0); 
+  const wheelRef = useRef<HTMLDivElement>(null);
 
   const options = useMemo<(number | MonthOption)[]>(() => {
     switch (step) {
@@ -61,13 +63,26 @@ export default function CalendarPicker({ onSubmit, onClose, initialStep = 'year'
 
   const currentValue = () => getOptionValue(options[index]);
 
-  const handleScroll = (e: React.WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIndex(prev => {
-      const next = e.deltaY > 0 ? prev + 1 : prev - 1;
-      return Math.max(0, Math.min(options.length - 1, next));
-    });
-  };
+  // ── Wheel handling, attached manually as non-passive so preventDefault
+  //    actually stops the underlying page from scrolling. React's synthetic
+  //    onWheel prop registers a passive listener in modern browsers, which
+  //    silently ignores preventDefault() — this is why scroll was bleeding
+  //    through to the page before. ──
+  useEffect(() => {
+    const el = wheelRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setIndex(prev => {
+        const next = e.deltaY > 0 ? prev + 1 : prev - 1;
+        return Math.max(0, Math.min(options.length - 1, next));
+      });
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [options.length]);
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -82,12 +97,12 @@ export default function CalendarPicker({ onSubmit, onClose, initialStep = 'year'
     }
   };
 
-  // Advances to the next step, or submits a full "YYYY-MM-DD" string on the last step
   const handleAdvance = () => {
     const value = currentValue();
 
     if (step === 'year') {
       setYear(value);
+      onNext(String(year));
       setIndex(0);
       setStep('month');
       return;
@@ -95,6 +110,7 @@ export default function CalendarPicker({ onSubmit, onClose, initialStep = 'year'
 
     if (step === 'month') {
       setMonth(value);
+      onNext(`${year}-${month}`);
       setIndex(0);
       setStep('day');
       return;
@@ -103,7 +119,6 @@ export default function CalendarPicker({ onSubmit, onClose, initialStep = 'year'
     onSubmit(`${year}-${pad(month)}-${pad(value)}`);
   };
 
-  // Lets the user stop early — submits a partial "YYYY" or "YYYY-MM" string
   const handleSkipRest = () => {
     if (step === 'month') {
       onSubmit(String(year));
@@ -111,7 +126,6 @@ export default function CalendarPicker({ onSubmit, onClose, initialStep = 'year'
       onSubmit(`${year}-${pad(month)}`);
     }
   };
-
   const handleClose = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     onClose();
@@ -121,13 +135,13 @@ export default function CalendarPicker({ onSubmit, onClose, initialStep = 'year'
   const advanceLabel = step === 'day' ? 'Подтвердить' : 'Далее';
 
   return (
-    <div className="form-container">
+    <div className="form-container" style= {{backgroundColor: 'white', height: '100%', width: '100%'}}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
         <span style={{ fontWeight: 600 }}>{stepLabel}</span>
         <button onClick={handleClose} aria-label="Закрыть">×</button>
       </div>
 
-      <div className="wheel" onWheel={handleScroll} onClick={handleClick}>
+      <div ref={wheelRef} className="wheel" onClick={handleClick}>
         <div
           className="wheel-inner"
           style={{ transform: `translateY(${-index * ITEM_HEIGHT + VISIBLE_OFFSET}px)` }}
@@ -144,13 +158,13 @@ export default function CalendarPicker({ onSubmit, onClose, initialStep = 'year'
       </div>
 
       <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-        <button onClick={handleAdvance} style={{ flex: 1 }}>
+        <button className='btn btn-primary' onClick={handleAdvance} style={{ flex: 1, height: '30%', width: '50%' }}>
           {advanceLabel}
         </button>
 
         {step !== 'year' && (
-          <button onClick={handleSkipRest} style={{ flex: 1 }}>
-            {step === 'month' ? `Готово: ${year}` : `Готово: ${year}-${pad(month)}`}
+          <button className='btn btn-secondary' onClick={handleSkipRest} style={{ flex: 1, height: '50%', width: '50%' }}>
+            Готово
           </button>
         )}
       </div>
