@@ -397,7 +397,7 @@ export async function getDoctorAppointments(filters?: {
     where: {
       doctorId,
       ...(filters?.status && {status: filters.status}),
-      ...(filters?.date && {date: filters.date}),
+      ...(filters?.date && {date: {contains: filters.date}}),
       ...(filters?.from && filters.to && {date: { gte: filters.from, lte: filters.to}}),
       ...(filters?.time && {time: filters.time}),
       ...(filters?.search && {

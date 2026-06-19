@@ -30,6 +30,8 @@ import { Doctor, Appointment, WhatsAppLog, DoctorFormData } from "./types";
 import DoctorForm from "./forms/DoctorForm";
 import SearchBar from "./SearchBar";
 import AppointmentList from "./AppointmentList";
+import CalendarPickerInput from "./calendars/CalendarPickerInput";
+
 
 
 export default function DoctorDashboard() {
@@ -67,7 +69,7 @@ export default function DoctorDashboard() {
   const [timeFilter, setTimeFilter] = useState(""); // "07:00"
   const [statusFilter, setStatusFilter] = useState(""); // "CONFIRMED" | ""
   const [doctorProfile, setDoctorProfile] = useState<Doctor | null>(null);
-
+  const [showCalendar, setShowCalendar] = useState(false);
   // Settings form state
   const [settingsForm, setSettingsForm] = useState<DoctorFormData>({
     name: "",
@@ -466,104 +468,9 @@ export default function DoctorDashboard() {
               flexWrap: "wrap",
             }}
           >
-            {/* Mode selector */}
-            <select
-              className="form-control"
-              style={{ width: "auto" }}
-              value={filterMode}
-              onChange={(e) =>
-                setFilterMode(
-                  e.target.value as "all" | "date" | "month" | "year",
-                )
-              }
-            >
-              <option value="all">Все записи</option>
-              <option value="date">По дате</option>
-              <option value="month">По месяцу</option>
-              <option value="year">По году</option>
-            </select>
-
-            {/* Conditional date/month/year input */}
-            {filterMode === "date" && (
-              <input
-                type="date"
-                className="form-control"
-                style={{ width: "auto" }}
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-              />
-            )}
-            {filterMode === "month" && (
-              <>
-                <select
-                  className="form-control"
-                  style={{ width: "auto" }}
-                  value={yearFilter}
-                  onChange={(e) => {
-                    setYearFilter(e.target.value);
-                    setMonthFilter(""); // reset month when year changes
-                  }}
-                >
-                  <option value="">Выберите год</option>
-                  {Array.from(
-                    { length: 5 },
-                    (_, i) => new Date().getFullYear() - 2 + i,
-                  ).map((y) => (
-                    <option key={y} value={String(y)}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  className="form-control"
-                  style={{ width: "auto" }}
-                  value={monthFilter}
-                  onChange={(e) => setMonthFilter(e.target.value)}
-                >
-                  <option value="">Выберите месяц</option>
-                  {[
-                    "Январь",
-                    "Февраль",
-                    "Март",
-                    "Апрель",
-                    "Май",
-                    "Июнь",
-                    "Июль",
-                    "Август",
-                    "Сентябрь",
-                    "Октябрь",
-                    "Ноябрь",
-                    "Декабрь",
-                  ].map((name, i) => {
-                    const val = `${yearFilter || new Date().getFullYear()}-${String(i + 1).padStart(2, "0")}`;
-                    return (
-                      <option key={val} value={val}>
-                        {name}
-                      </option>
-                    );
-                  })}
-                </select>
-              </>
-            )}
-            {filterMode === "year" && (
-              <select
-                className="form-control"
-                style={{ width: "auto" }}
-                value={yearFilter}
-                onChange={(e) => setYearFilter(e.target.value)}
-              >
-                <option value="">Выберите год</option>
-                {Array.from(
-                  { length: 5 },
-                  (_, i) => new Date().getFullYear() - 2 + i,
-                ).map((y) => (
-                  <option key={y} value={String(y)}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-            )}
+            <CalendarPickerInput value={date}
+              onChange={(v) => setFilter('date',v)}/>
+            
             {/* Time filter */}
             <input
               type="time"

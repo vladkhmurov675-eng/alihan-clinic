@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import DisabledDatesPicker from '../DisabledDatesPicker';
+import DisabledDatesPicker from '../calendars/DisabledDatesPicker';
 import { useToast } from '../../hooks/toast';
 import { DoctorFormData } from '../types';
 import DoctorAvatar from '../DoctorAvatar';
