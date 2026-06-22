@@ -19,10 +19,21 @@ const ITEM_HEIGHT = 40;
 export default function TimePicker({onSubmit, onCancel, value}: Props){
     const [hour, setHour] = useState('00');
     const [minutes, setMinutes] = useState('00');
-    const [draggingWheel, setDraggingWheel] = useState<"hour" | "minute" | null>(null);;
-    const hourRef = useRef<HTMLDivElement>(null);
-    const minuteRef = useRef<HTMLDivElement>(null);
-    
+    const [draggingWheel, setDraggingWheel] = useState<"hour" | "minute" | null>(null);
+    const [isDragging, setDragging] = useState(false);
+    const [translateY, setTranslateY] = useState(0);
+    const [index, setIndex] = useState(0);
+    const wheelRef = useRef<HTMLDivElement>;
+
+    const handleMouseDown = (e: MouseEvent) => {
+        const y = e.clientY;
+        
+
+    }
+
+
+
+
     useEffect(() => {
 
     })
