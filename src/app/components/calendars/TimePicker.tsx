@@ -23,16 +23,23 @@ export default function TimePicker({onSubmit, onCancel, value}: Props){
     const [isDragging, setDragging] = useState(false);
     const [translateY, setTranslateY] = useState(0);
     const [index, setIndex] = useState(0);
-    const wheelRef = useRef<HTMLDivElement>;
+    const hourRef = useRef<HTMLDivElement>(null);
+    const minuteRef = useRef<HTMLDivElement>(null);
 
-    const handleMouseDown = (e: MouseEvent) => {
-        const y = e.clientY;
-        
+
+    const handleScroll = (e: WheelEvent<HTMLDivElement>) => {
+        const y = e.deltaY;
+        setIndex(y/40);
+        setHour(index.toString().padStart(2,"0"));   
+        }
+
+    const handleDrag = (e: MouseEvent<HTMLDivElement> | TouchEvent<HTMLDivElement>) =>{
 
     }
 
+    const handleClick = (e: MouseEvent<HTMLDivElement>) => {
 
-
+    }
 
     useEffect(() => {
 
