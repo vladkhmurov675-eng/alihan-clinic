@@ -166,39 +166,155 @@ h6 {
 }
 
 
-/* viewport */
-.wheel {
-  height: 200px;
-  width: 160px;
-  overflow: hidden;
-  position: relative;
-  border-radius: 12px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+.form-container {
+  background: var(--bg-card, #fff);
+  border-radius: 16px;
+  padding: 1.25rem;
+  width: 260px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--border-color, #e5e5e5);
 }
 
-/* items */
+.form-container > div:first-child {
+  margin-bottom: 0.75rem !important;
+}
+
+.form-container > div:first-child span {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.form-container > div:first-child button {
+  background: var(--bg-secondary, #f4f4f4);
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text-muted, #888);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.form-container > div:first-child button:hover {
+  background: var(--bg-tertiary, #e8e8e8);
+}
+
+
+.form-container .btn,
+.form-container button:not(:first-child button) {
+  border: none;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.form-container > div:last-child {
+  margin-top: 1rem !important;
+}
+
+.form-container > div:last-child button:first-child {
+  background: var(--color-primary, #2d6a2d);
+  color: #fff;
+}
+.form-container > div:last-child button:first-child:hover {
+  filter: brightness(1.08);
+}
+
+.form-container > div:last-child button:last-child {
+  background: var(--bg-secondary, #f0f0f0);
+  color: var(--text-secondary, #444);
+}
+.form-container > div:last-child button:last-child:hover {
+  background: var(--bg-tertiary, #e4e4e4);
+}
+
+.form-container button:active {
+  transform: scale(0.97);
+}
+
+
+/* viewport */
+.wheel {
+  position: relative;
+  height: 200px; /* 5 visible rows × 40px */
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--bg-secondary, #f7f8f7);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+
+  /* Fades the top and bottom edges so items appear to emerge/disappear */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 25%,
+    black 75%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 25%,
+    black 75%,
+    transparent 100%
+  );
+}
+
+.wheel:active {
+  cursor: grabbing;
+}
+
+/* Highlighted center band — sits behind the active item */
+.wheel::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  right: 8px;
+  height: 40px;
+  transform: translateY(-50%);
+  background: var(--color-primary-glow, rgba(45, 106, 45, 0.08));
+  border-radius: 8px;
+  border-top: 1.5px solid var(--color-primary, #2d6a2d);
+  border-bottom: 1.5px solid var(--color-primary, #2d6a2d);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.wheel-inner {
+  position: relative;
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+}
+
 .wheel-item {
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  font-size: 1rem;
-  color: var(--text-primary);
-
-  opacity: 0.4;
-  transition: all 0.2s ease;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-muted, #aaa);
+  opacity: 0.45;
+  transform: scale(0.88);
+  transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease, font-weight 0.15s ease;
+  pointer-events: none; /* clicks are handled by the wheel container's click math */
 }
 
-/* selected item */
 .wheel-item.active {
+  color: var(--color-primary, #2d6a2d);
   font-weight: 700;
-  color: var(--text-active);
-  background-color: var(--color-primary);
+  font-size: 1.05rem;
   opacity: 1;
-  transform: scale(1.1);
+  transform: scale(1);
 }
+
 
 /* ── Buttons ── */
 .btn {

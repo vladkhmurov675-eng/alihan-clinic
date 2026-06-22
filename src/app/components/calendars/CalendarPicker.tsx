@@ -16,7 +16,7 @@ interface MonthOption {
 
 const ITEM_HEIGHT = 40;
 const VISIBLE_OFFSET = 80;
-
+const VISIBLE_ROWS = 1;
 const YEARS = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
 
 const MONTHS: MonthOption[] = [
@@ -50,6 +50,7 @@ export default function CalendarPicker({ onSubmit, onNext, onClose, initialStep 
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(1);
   const [index, setIndex] = useState(0); 
+  const [isDragging, setIsDragging] = useState(false);
   const wheelRef = useRef<HTMLDivElement>(null);
 
   const options = useMemo<(number | MonthOption)[]>(() => {
@@ -68,12 +69,16 @@ export default function CalendarPicker({ onSubmit, onNext, onClose, initialStep 
   //    onWheel prop registers a passive listener in modern browsers, which
   //    silently ignores preventDefault() — this is why scroll was bleeding
   //    through to the page before. ──
+
+
+
   useEffect(() => {
     const el = wheelRef.current;
     if (!el) return;
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       setIndex(prev => {
         const next = e.deltaY > 0 ? prev + 1 : prev - 1;
         return Math.max(0, Math.min(options.length - 1, next));
@@ -96,6 +101,56 @@ export default function CalendarPicker({ onSubmit, onNext, onClose, initialStep 
       setIndex(prev => Math.min(options.length - 1, prev + 1));
     }
   };
+
+    const dragState = useRef<{
+    startY: number;
+    startIndex: number;
+    dragging: boolean;
+    moved: boolean;
+  }>({ startY: 0, startIndex: 0, dragging: false, moved: false });
+ 
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragState.current = {
+      startY: e.clientY,
+      startIndex: index,
+      dragging: true,
+      moved: false,
+    };
+    setIsDragging(true);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+ 
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const state = dragState.current;
+    if (!state.dragging) return;
+ 
+    const deltaY = e.clientY - state.startY;
+ 
+    // Below this threshold we treat it as a click, not a drag —
+    // prevents a tiny accidental wobble from being read as a scroll
+    if (Math.abs(deltaY) > 4) state.moved = true;
+    if (!state.moved) return;
+ 
+    const stepsDelta = Math.round(deltaY / ITEM_HEIGHT);
+    const nextIndex = state.startIndex - stepsDelta;
+    setIndex(Math.max(0, Math.min(options.length - 1, nextIndex)));
+  };
+ 
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    const state = dragState.current;
+    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+ 
+    // If the pointer never moved past the threshold, fall back to
+    // click-to-step behavior using the same up/down-of-center logic
+    if (!state.moved) {
+      handleClick(e as unknown as React.MouseEvent<HTMLDivElement>);
+    }
+ 
+    state.dragging = false;
+    setIsDragging(false);
+  };
+
+
 
   const handleAdvance = () => {
     const value = currentValue();
@@ -135,17 +190,31 @@ export default function CalendarPicker({ onSubmit, onNext, onClose, initialStep 
   const advanceLabel = step === 'day' ? 'Подтвердить' : 'Далее';
 
   return (
-    <div className="form-container" style= {{backgroundColor: 'white', height: '100%', width: '100%'}}>
+    <div className="form-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
         <span style={{ fontWeight: 600 }}>{stepLabel}</span>
         <button onClick={handleClose} aria-label="Закрыть">×</button>
       </div>
-
-      <div ref={wheelRef} className="wheel" onClick={handleClick}>
+ 
+      <div
+        ref={wheelRef}
+        className="wheel"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
         <div
           className="wheel-inner"
-          style={{ transform: `translateY(${-index * ITEM_HEIGHT + VISIBLE_OFFSET}px)` }}
+          style={{
+            transform: `translateY(${-index * ITEM_HEIGHT + VISIBLE_OFFSET}px)`,
+            transition: isDragging ? 'none' : undefined,
+          }}
         >
+          {/* Spacer rows so the first real item can be centered */}
+          {Array.from({ length: Math.floor(VISIBLE_ROWS / 2) }).map((_, i) => (
+            <div key={`spacer-top-${i}`} className="wheel-item" style={{ pointerEvents: 'none' }} />
+          ))}
+ 
           {options.map((opt, i) => (
             <div
               key={getOptionValue(opt)}
@@ -154,20 +223,26 @@ export default function CalendarPicker({ onSubmit, onNext, onClose, initialStep 
               {getOptionLabel(opt)}
             </div>
           ))}
+ 
+          {/* Spacer rows so the last real item can be centered */}
+          {Array.from({ length: Math.floor(VISIBLE_ROWS / 2) }).map((_, i) => (
+            <div key={`spacer-bottom-${i}`} className="wheel-item" style={{ pointerEvents: 'none' }} />
+          ))}
         </div>
       </div>
-
+ 
       <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-        <button className='btn btn-primary' onClick={handleAdvance} style={{ flex: 1, height: '30%', width: '50%' }}>
+        <button onClick={handleAdvance} style={{ flex: 1 }}>
           {advanceLabel}
         </button>
-
+ 
         {step !== 'year' && (
-          <button className='btn btn-secondary' onClick={handleSkipRest} style={{ flex: 1, height: '50%', width: '50%' }}>
-            Готово
+          <button onClick={handleSkipRest} style={{ flex: 1 }}>
+            {step === 'month' ? `Готово: ${year}` : `Готово: ${year}-${pad(month)}`}
           </button>
         )}
       </div>
     </div>
+
   );
 }

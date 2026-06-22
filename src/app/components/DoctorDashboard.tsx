@@ -56,6 +56,7 @@ export default function DoctorDashboard() {
       from = '',
       to = '',
       sortBy = '',
+      range = '',
     } = params;
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,7 +65,6 @@ export default function DoctorDashboard() {
   const [statusFilter, setStatusFilter] = useState(""); // "CONFIRMED" | ""
   const [doctorProfile, setDoctorProfile] = useState<Doctor | null>(null);
   const [showFilter, setShowFilter] = useState(false); // Settings form state
-  const [range, setRange] = useState<"date" | "range">("date");
   const [settingsForm, setSettingsForm] = useState<DoctorFormData>({
     name: "",
     phone: "",
@@ -193,18 +193,14 @@ export default function DoctorDashboard() {
     }
   };
 
-  useEffect(() => {
-    let cancelled = false;
-    async function run() {
-        const doctor = await getCurrentDoctor();
-        if (cancelled) return;
-        if (!doctor) return;
-        setDoctorProfile(doctor);
-      }
-
+    useEffect(() => {
+      let cancelled = false;
+      const run = async () => {
+        if (!cancelled) await fetchDoctorProfile();
+      };
       run();
-    return () => { cancelled = true; };
-  }, []);
+      return () => { cancelled = true; };
+    }, [fetchDoctorProfile]);
 
   useEffect(() => {
     let cancelled = false;
@@ -227,6 +223,22 @@ export default function DoctorDashboard() {
       showToast("Ошибка при обновлении статуса", "error");
     }
   };
+
+  const handleRangeModeChange = (mode: string) => {
+  const params = new URLSearchParams(searchParams.toString());
+  params.set('range', mode);
+
+  if (mode === 'range') {
+    // entering range mode — clear the single-date filter so it can't collide
+    params.delete('date');
+  } else {
+    // leaving range mode — clear from/to so they don't linger
+    params.delete('from');
+    params.delete('to');
+  }
+
+  router.push(`${pathname}?${params.toString()}`, { scroll: false });
+};
 
   const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -471,19 +483,35 @@ export default function DoctorDashboard() {
               flexWrap: "wrap",
             }}
           >
-            <button className = 'btn-text' style={{fontSize: "16px"}} onClick={() => setRange(prev => (prev === "date" ? "range" : "date"))}>
-            {range === "date" ? "Дата" : "Период"}
-          </button>
+            <select value={range} onChange={(e) => handleRangeModeChange(e.target.value)}>
+              <option value="date">Точная дата</option>
+              <option value="range">Диапазон</option>
+            </select>
             
             {range === "date" && (
             <CalendarPickerInput value={date}
               onChange={(v) => setFilter('date',v)}/>)}
             
-            {range === "range" && (<> С
-              <input className = "form-control" type='date' value={from} onChange = {(e) => setFilter("from", e.target.value)}/>
-              По
-              <input className = "form-control" type='date' value={to} onChange = {(e) => setFilter("to", e.target.value)}/> 
-            </>)}
+            {range === "range" && (
+              <>
+                С:
+                <input className="form-control" type="date" value={from} onChange={(e) => setFilter("from", e.target.value)} />
+                По:
+                <input className="form-control" type="date" value={to} onChange={(e) => setFilter("to", e.target.value)} />
+                {(from || to) && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setFilter('from', '');
+                      setFilter('to', '');
+                    }}
+                  >
+                    Сбросить
+                  </button>
+                )}
+              </>
+            )}
 
             {/* Time filter */}
             <input
