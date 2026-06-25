@@ -17,7 +17,7 @@ const PUBLIC_NAV = [
 ];
 
 const ROLE_META = {
-  doctor: { label: 'Кабинет врача', href: '/doctor', icon: <Stethoscope size={15} />, bg: '#dcfce7', color: '#166534' },
+  doctor: { label: 'Кабинет врача', href: '/doctor?tab=settings', icon: <Stethoscope size={15} />, bg: '#dcfce7', color: '#166534' },
   admin: { label: 'Администратор', href: '/admin', icon: <ShieldCheck size={15} />, bg: '#dbeafe', color: '#1e40af' },
   director: { label: 'Руководитель', href: '/director', icon: <BarChart2 size={15} />, bg: '#fef9c3', color: '#854d0e' },
 } as const;

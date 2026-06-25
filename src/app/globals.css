@@ -170,7 +170,7 @@ h6 {
   background: var(--bg-card, #fff);
   border-radius: 16px;
   padding: 1.25rem;
-  width: 260px;
+  width: auto;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
   border: 1px solid var(--border-color, #e5e5e5);
 }
@@ -217,18 +217,12 @@ h6 {
   margin-top: 1rem !important;
 }
 
-.form-container > div:last-child button:first-child {
-  background: var(--color-primary, #2d6a2d);
-  color: #fff;
-}
+
 .form-container > div:last-child button:first-child:hover {
   filter: brightness(1.08);
 }
 
-.form-container > div:last-child button:last-child {
-  background: var(--bg-secondary, #f0f0f0);
-  color: var(--text-secondary, #444);
-}
+
 .form-container > div:last-child button:last-child:hover {
   background: var(--bg-tertiary, #e4e4e4);
 }
@@ -438,7 +432,10 @@ h6 {
   align-items: center;
   gap: 6px;
   margin: 6px;
+  height: 20px;
   border: none;
+  border-radius: 10px;
+  background: none;
   border-right: 2px ;
   padding: 16px 16px;
   font-size: inherit;

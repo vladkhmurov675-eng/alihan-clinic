@@ -17,7 +17,8 @@ interface MonthOption {
 const ITEM_HEIGHT = 40;
 const VISIBLE_OFFSET = 80;
 const VISIBLE_ROWS = 1;
-const YEARS = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
+const currentYear = new Date().getFullYear();
+const YEARS: number[] = Array.from({ length: 100 }, (_,i) => 1970 + i).toReversed();
 
 const MONTHS: MonthOption[] = [
   { value: 1, label: 'Январь' }, { value: 2, label: 'Февраль' },
@@ -49,7 +50,13 @@ export default function CalendarPicker({ onSubmit, onNext, onClose, initialStep 
   const [step, setStep] = useState<Step>(initialStep);
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(1);
-  const [index, setIndex] = useState(0); 
+ const [index, setIndex] = useState(() => {
+  if (initialStep === 'year') {
+    const idx = YEARS.indexOf(currentYear);
+    return idx === -1 ? 0 : idx;
+  }
+  return 0;
+});
   const [isDragging, setIsDragging] = useState(false);
   const wheelRef = useRef<HTMLDivElement>(null);
 

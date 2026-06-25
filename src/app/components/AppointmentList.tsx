@@ -12,6 +12,13 @@
         onStatusChange: (id: number, status: string) => void;
     }
 
+
+    function transformDate(date: string){
+        let newDate: string[] = date.split('-');
+        newDate = newDate.toReversed();
+        return newDate.join('.');
+    }
+
     export default function AppointmentList<T>({ appointments, onStatusChange }: Props<T>) {
         const statusLabels: Record<string, string> = {
             PENDING: "Ожидает",
@@ -73,7 +80,7 @@
                                     style={{ color: "var(--color-accent)" }}
                                 />
                                 <span style={{ fontWeight: 700, fontSize: "1.1rem" }}>
-                                    {appt.date},{appt.time}
+                                    {transformDate(appt.date)}, {appt.time}
                                 </span>
                                 <span
                                     className={`badge ${statusBadgeClass[appt.status]}`}

@@ -33,16 +33,15 @@ import AppointmentList from "./AppointmentList";
 import CalendarPickerInput from "./calendars/CalendarPickerInput";
 
 
-
 export default function DoctorDashboard() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [phone, setPhone] = useState("");
+  const [, setIsLoggedIn] = useState(false);
+  const [phone,] = useState("");
   const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [loggingIn, setLoggingIn] = useState(false);
+  const [, setLoginError] = useState("");
+  const [, setLoggingIn] = useState(false);
 
   // Dashboard state
   const params = useMemo(() => Object.fromEntries(searchParams.entries()), [searchParams]);
@@ -61,8 +60,7 @@ export default function DoctorDashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [timeFilter, setTimeFilter] = useState(""); // "07:00"
-  const [statusFilter, setStatusFilter] = useState(""); // "CONFIRMED" | ""
+  const [timeSlots, setTimeSlots] = useState<string[]>([]);
   const [doctorProfile, setDoctorProfile] = useState<Doctor | null>(null);
   const [showFilter, setShowFilter] = useState(false); // Settings form state
   const [settingsForm, setSettingsForm] = useState<DoctorFormData>({
@@ -144,10 +142,24 @@ export default function DoctorDashboard() {
   router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
 };
 
+ const getTimeSlots = (start: string, end: string, duration: number): string[] => {
+    const slots: string[] = [];
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    let cur = sh * 60 + sm;
+    const finish = eh * 60 + em;
+    while (cur + duration <= finish) {
+        slots.push(`${String(Math.floor(cur / 60)).padStart(2, '0')}:${String(cur % 60).padStart(2, '0')}`);
+        cur += duration;
+    }
+    return slots;
+}
+
+
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
     try {
-      const appts = await getDoctorAppointments({status, search, date, time, from, to, sortBy});
+      const appts = await getDoctorAppointments({ status, search, date, time, from, to, sortBy: sortBy as 'status' | 'date' | 'time' | undefined });
         setAppointments(appts);
     } catch (err) {
       console.error("Error fetching appointments:", err);
@@ -175,6 +187,7 @@ export default function DoctorDashboard() {
           experienceYears: doc.experienceYears ?? 0,
           description: doc.description ?? "",
         });
+        setTimeSlots(getTimeSlots(doc.workStartTime, doc.workEndTime, doc.slotDuration));
       }
     } catch (err) {
       console.error("Error fetching doctor profile:", err);
@@ -210,6 +223,7 @@ export default function DoctorDashboard() {
     load();
     return () => { cancelled = true; };
   }, [fetchAppointments]);
+
 
   const handleStatusChange = async (
     appointmentId: number,
@@ -403,7 +417,8 @@ export default function DoctorDashboard() {
       </div>
 
       {/* Tabs */}
-      <div className = 'tab-bar'
+      <div
+        className="tab-bar"
         style={{
           display: "flex",
           gap: "0.25rem",
@@ -442,14 +457,8 @@ export default function DoctorDashboard() {
             style={{
               flex: 1,
               padding: "0.65rem 1rem",
-              background:
-                t.key
-                  ? "rgba(255,255,255,0.08)"
-                  : "transparent",
-              color:
-                t.key
-                  ? "var(--text-primary)"
-                  : "var(--text-muted)",
+              background: t.key ? "rgba(255,255,255,0.08)" : "transparent",
+              color: t.key ? "var(--text-primary)" : "var(--text-muted)",
               border: "none",
               borderRadius: "10px",
               fontWeight: t.key ? 700 : 500,
@@ -464,136 +473,233 @@ export default function DoctorDashboard() {
       {/* ─── TAB: Appointments ─── */}
       {tab === "appointments" && (
         <div className="animate-fade-in">
-          <button className = 'btn-icon' style={{marginBottom: '16px'}} onClick={() => setShowFilter(!showFilter)}>Фильтры
-            <ArrowDown style={{transform: showFilter ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease"}}/>
+          <button
+            className="btn-icon"
+            style={{ marginBottom: "16px" }}
+            onClick={() => setShowFilter(!showFilter)}
+          >
+            Фильтры
+            <ArrowDown
+              style={{
+                transform: showFilter ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 0.2s ease",
+              }}
+            />
           </button>
           {/* Filters */}
           {/* Date selector */}
-          {showFilter &&(
+          {showFilter && (
             <>
-          
-          
-          
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "1rem",
-              marginBottom: "1.5rem",
-              flexWrap: "wrap",
-            }}
-          >
-            <select value={range} onChange={(e) => handleRangeModeChange(e.target.value)}>
-              <option value="date">Точная дата</option>
-              <option value="range">Диапазон</option>
-            </select>
-            
-            {range === "date" && (
-            <CalendarPickerInput value={date}
-              onChange={(v) => setFilter('date',v)}/>)}
-            
-            {range === "range" && (
-              <>
-                С:
-                <input className="form-control" type="date" value={from} onChange={(e) => setFilter("from", e.target.value)} />
-                По:
-                <input className="form-control" type="date" value={to} onChange={(e) => setFilter("to", e.target.value)} />
-                {(from || to) && (
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => {
-                      setFilter('from', '');
-                      setFilter('to', '');
-                    }}
-                  >
-                    Сбросить
-                  </button>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: "10px"
+                }}
+              >
+                <button
+                  value="date"
+                  className="btn-text"
+                  style={{ backgroundColor: range === 'date' ? 'var(--color-primary)' : '',
+                          color: range === 'date' ? 'white' : ''
+                  }}
+                  onClick={() => handleRangeModeChange("date")}
+                >
+                  Дата
+                </button>
+                <div
+                  style={{
+                    backgroundColor: "black",
+                    height: "20px",
+                    width: "1px",
+                  }}
+                ></div>
+                <button
+                  value="range"
+                  className="btn-text"
+                  style={{ backgroundColor: range === 'range' ? 'var(--color-primary)' : '',
+                          color: range === 'range' ? 'white' : ''
+                  }}
+                  onClick={() => handleRangeModeChange("range")}
+                >
+                  Период
+                </button>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "1rem",
+                  marginBottom: "1.5rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                {range !== "range" && (
+                  <CalendarPickerInput
+                    value={date}
+                    onChange={(v) => setFilter("date", v)}
+                  />
                 )}
-              </>
-            )}
 
-            {/* Time filter */}
-            <input
-              type="time"
-              className="form-control"
-              style={{ width: "auto" }}
-              value={timeFilter}
-              onChange={(e) => setFilter('time', e.target.value)}
-              title="Фильтр по времени"
-            />
+                {range === "range" && (
+                  <>
+                    С:
+                    <input
+                      className="form-control"
+                      type="date"
+                      value={from}
+                      onChange={(e) => setFilter("from", e.target.value)}
+                    />
+                    По:
+                    <input
+                      className="form-control"
+                      type="date"
+                      value={to}
+                      onChange={(e) => setFilter("to", e.target.value)}
+                    />
+                    {(from || to) && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => {
+                          setFilter("from", "");
+                          setFilter("to", "");
+                        }}
+                      >
+                        Сбросить
+                      </button>
+                    )}
+                  </>
+                )}
 
-            {/* Status filter */}
-            <select
-              className="form-control"
-              style={{ width: "auto" }}
-              value={statusFilter}
-              onChange={(e) => setFilter('status', e.target.value)}
-            >
-              <option value="">Все статусы</option>
-              <option value="PENDING">Ожидает</option>
-              <option value="CONFIRMED">Подтверждён</option>
-              <option value="COMPLETED">Завершён</option>
-              <option value="CANCELLED">Отменён</option>
-            </select>
+                {/* Time filter */}
+                <select
+                  className="form-control"
+                  style={{ width: "auto" }}
+                  value={time}
+                  onChange={(e) => setFilter("time", e.target.value)}
+                  title="Фильтр по времени"
+                >
+                  <option value="">Время</option>
+                  {timeSlots.map((t) => (
+                    <option key={t} value={t}>
+                      {" "}
+                      {t}
+                    </option>
+                  ))}
+                </select>
 
-            {/* Sort */}
-            <select
-              className="form-control"
-              value={sortBy}
-              onChange={(e) =>
-                setFilter('sortBy', e.target.value as "date" | "time" | "status")
-              }
-              style={{ width: "auto" }}
-            >
-              <option value="date">Сортировать по дате</option>
-              <option value="time">Сортировать по времени</option>
-              <option value="status">Сортировать по статусу</option>
-            </select>
+                {/* Status filter */}
+                <select
+                  className="form-control"
+                  style={{ width: "auto" }}
+                  value={status}
+                  onChange={(e) => setFilter("status", e.target.value)}
+                >
+                  <option value="">Все статусы</option>
+                  <option value="PENDING">Ожидает</option>
+                  <option value="CONFIRMED">Подтверждён</option>
+                  <option value="COMPLETED">Завершён</option>
+                  <option value="CANCELLED">Отменён</option>
+                </select>
 
-            <button
-              onClick={fetchAppointments}
-              className="btn btn-accent"
-              style={{ padding: "0.6rem 1.2rem" }}
-            >
-              Обновить
-            </button>
-          </div></> )} 
+                {/* Sort */}
+                <select
+                  className="form-control"
+                  value={sortBy}
+                  onChange={(e) =>
+                    setFilter(
+                      "sortBy",
+                      e.target.value as "date" | "time" | "status",
+                    )
+                  }
+                  style={{ width: "auto" }}
+                >
+                  <option value="date">Сортировать по дате</option>
+                  <option value="time">Сортировать по времени</option>
+                  <option value="status">Сортировать по статусу</option>
+                </select>
 
-         {/* Search Bar */}
-          
+                <button
+                  onClick={fetchAppointments}
+                  className="btn btn-accent"
+                  style={{ padding: "0.6rem 1.2rem" }}
+                >
+                  Обновить
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Search Bar */}
+
           <div style={{ marginBottom: "1.5rem", maxWidth: "480px" }}>
             <SearchBar<Appointment>
               key="doctor-search-appointments"
               items={appointments}
               placeholder="Поиск по имени, телефону или жалобе... (Enter)"
-              getSearchText={appt => `${appt.patientName} ${appt.patientPhone} ${appt.complaint || ''}`}
-              getDisplayValue={appt => appt.patientName}
-              onSearch={(q) => setFilter('search', q)}
-              onSelect={appt => {}}
+              getSearchText={(appt) =>
+                `${appt.patientName} ${appt.patientPhone} ${appt.complaint || ""}`
+              }
+              getDisplayValue={(appt) => appt.patientName}
+              onSearch={(q) => setFilter("search", q)}
+              onSelect={(appt) => {}}
               renderItem={(appt, active) => (
-                <div style={{ padding: '0.6rem 1rem', display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{appt.patientName}</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                <div
+                  style={{
+                    padding: "0.6rem 1rem",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      fontSize: "0.9rem",
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    {appt.patientName}
+                  </span>
+                  <span
+                    style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}
+                  >
                     {appt.date} {appt.time} · {appt.patientPhone}
                   </span>
                 </div>
               )}
             />
           </div>
-        
+
           {searchQuery && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.6rem",
+                marginBottom: "1.25rem",
+                fontSize: "0.85rem",
+                color: "var(--text-secondary)",
+              }}
+            >
               Результаты для: <strong>«{searchQuery}»</strong>
               <button
-                onClick={() => setSearchQuery('')}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', fontSize: '0.82rem', padding: 0 }}
+                onClick={() => setSearchQuery("")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "var(--color-danger)",
+                  fontSize: "0.82rem",
+                  padding: 0,
+                }}
               >
                 × Сбросить
               </button>
             </div>
-          )} 
-        
+          )}
+
           {loading ? (
             <div
               style={{
@@ -623,12 +729,17 @@ export default function DoctorDashboard() {
                   marginTop: "0.5rem",
                 }}
               >
-                {searchQuery ? "Попробуйте изменить поисковый запрос" : "Попробуйте выбрать другую дату"}
+                {searchQuery
+                  ? "Попробуйте изменить поисковый запрос"
+                  : "Попробуйте выбрать другую дату"}
               </p>
             </div>
-          ) : (<AppointmentList appointments={appointments}
-                onStatusChange={handleStatusChange}></AppointmentList>
-            )}
+          ) : (
+            <AppointmentList
+              appointments={appointments}
+              onStatusChange={handleStatusChange}
+            ></AppointmentList>
+          )}
         </div>
       )}
 
@@ -643,6 +754,7 @@ export default function DoctorDashboard() {
             onChange={setSettingsForm}
             onSubmit={handleSaveSettings}
             saving={savingSettings}
+            onAvatarUpdate={fetchDoctorProfile}
           />
         </div>
       )}
