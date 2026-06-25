@@ -439,6 +439,7 @@ h6 {
   gap: 6px;
   margin: 6px;
   border: none;
+  background: none;
   border-right: 2px ;
   padding: 16px 16px;
   font-size: inherit;

@@ -60,7 +60,6 @@ export default function DoctorDashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [timeFilter, setTimeFilter] = useState(""); // "07:00"
   const [timeSlots, setTimeSlots] = useState<string[]>([]);
   const [doctorProfile, setDoctorProfile] = useState<Doctor | null>(null);
   const [showFilter, setShowFilter] = useState(false); // Settings form state
@@ -501,7 +500,9 @@ export default function DoctorDashboard() {
                 <button
                   value="date"
                   className="btn-text"
-                  style={{ borderRight: "16 px solid" }}
+                  style={{ backgroundColor: range === 'date' ? 'var(--color-primary)' : '',
+                          color: range === 'date' ? 'white' : ''
+                  }}
                   onClick={() => handleRangeModeChange("date")}
                 >
                   Дата
@@ -514,8 +515,11 @@ export default function DoctorDashboard() {
                   }}
                 ></div>
                 <button
-                  value="date"
+                  value="range"
                   className="btn-text"
+                  style={{ backgroundColor: range === 'range' ? 'var(--color-primary)' : '',
+                          color: range === 'range' ? 'white' : ''
+                  }}
                   onClick={() => handleRangeModeChange("range")}
                 >
                   Период
@@ -573,7 +577,7 @@ export default function DoctorDashboard() {
                 <select
                   className="form-control"
                   style={{ width: "auto" }}
-                  value={timeFilter}
+                  value={time}
                   onChange={(e) => setFilter("time", e.target.value)}
                   title="Фильтр по времени"
                 >
