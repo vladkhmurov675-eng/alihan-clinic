@@ -53,18 +53,20 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
     let start = d[0];
     let previous = d[0];
     for (let i: number = 1; i < d.length; i++){
-      let current = d[i];
+      const  current = d[i];
       if(current.getTime() - previous.getTime() > oneDay ){
         periods.push({
         start: start,
         end: previous
     });
+        start = current;
       }
       previous = current;
-      start = current;
-    }
+      }
+      periods.push({start: start, end: previous});
+    
     return periods;
-  }
+    }
 
   const commit = useCallback(
     (set: Set<string>) => {
