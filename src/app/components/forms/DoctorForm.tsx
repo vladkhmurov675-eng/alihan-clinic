@@ -39,60 +39,16 @@ export default function DoctorForm({
   return (
     <>
       {ToastComponent}
-      <div style={{ display: 'grid', gap: '2rem', alignItems: 'flex-start' }}>
-         {/* ── Avatar section ── */}
-        <div style={{ width: 200, flexShrink: 0, marginTop: '0.5rem', marginBottom: '0.5rem' }}>
-          <div style= {{}}>
-          <DoctorAvatar
-            name={form.name || 'Н И'}
-            avatar={currentAvatar}
-            size={200}
-          /> 
-          </div>
-          {doctorId ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setShowAvatarForm(v => !v)}
-                className="btn btn-secondary"
-                style={{ display: 'block', width: '100%', marginTop: '0.75rem', fontSize: '0.85rem' }}
-              >
-                {showAvatarForm ? 'Скрыть' : 'Изменить фото'}
-              </button>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 200px',
+        gap: '2rem',
+        alignItems: 'flex-start',
+      }}>
 
-              {showAvatarForm && (
-                <AvatarUploadForm
-                  isAdmin={isAdmin}
-                  doctorId={doctorId}
-                  currentAvatar={currentAvatar}
-                  onUpload={(newUrl: string) => {
-                    onAvatarUpdate?.(newUrl);
-                    showToast('Аватар обновлён', 'success');
-                    setShowAvatarForm(false);
-                  }}
-                  onClose={() => setShowAvatarForm(false)}
-                />
-              )}
-            </>
-          ) : (
-            <p style={{
-              fontSize: '0.78rem',
-              color: 'var(--text-muted)',
-              marginTop: '0.75rem',
-              textAlign: 'center',
-              lineHeight: 1.5,
-            }}>
-              Фото можно добавить после создания врача
-            </p>
-          )}
-        </div>
-
-      </div>
-
-
-        {/* ── Main form ── */}
-        <form onSubmit={onSubmit} style={{ flex: 1 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        {/* ── Main form (left, fills remaining space) ── */}
+        <form onSubmit={onSubmit}>
+          <div className = 'form-container' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
 
             <div className="input-group" style={{ gridColumn: '1 / -1' }}>
               <label className="input-label">ФИО</label>
@@ -119,10 +75,10 @@ export default function DoctorForm({
               <select
                 className="form-control"
                 style={{ width: '100%' }}
-                value={form.specialization }
+                value={form.specialization}
                 onChange={e => set('specialization', e.target.value)}
               >
-               <option value="">--Выберите специализацию--</option>
+                <option value="">--Выберите специализацию--</option>
                 {specialties.map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
@@ -246,7 +202,60 @@ export default function DoctorForm({
           </button>
         </form>
 
-       
+        {/* ── Avatar section (right, fixed width) ── */}
+        <div style={{ height: 'auto', width: '100%',
+                  backgroundColor: 'white',
+                  padding: 10,
+                  border: '3px solid #e0e0e0', // ← you also had `border: '3px'` which is invalid (missing style+color)
+                  borderRadius: 10,
+                  flexShrink: 0}}>
+          
+          <div style={{ width: 'inherit', height: 270, margin: '0 auto' }}>
+          <DoctorAvatar
+            name={form.name || 'Н И'}
+            avatar={currentAvatar}
+            size={100}
+          />
+          </div>
+          {doctorId ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowAvatarForm(v => !v)}
+                className="btn btn-secondary"
+                style={{ display: 'block', width: '100%', marginTop: '0.75rem', fontSize: '0.85rem' }}
+              >
+                {showAvatarForm ? 'Скрыть' : 'Изменить фото'}
+              </button>
+
+              {showAvatarForm && (
+                <AvatarUploadForm
+                  isAdmin={isAdmin}
+                  doctorId={doctorId}
+                  currentAvatar={currentAvatar}
+                  onUpload={(newUrl: string) => {
+                    onAvatarUpdate?.(newUrl);
+                    showToast('Аватар обновлён', 'success');
+                    setShowAvatarForm(false);
+                  }}
+                  onClose={() => setShowAvatarForm(false)}
+                />
+              )}
+            </>
+          ) : (
+            <p style={{
+              fontSize: '0.78rem',
+              color: 'var(--text-muted)',
+              marginTop: '0.75rem',
+              textAlign: 'center',
+              lineHeight: 1.5,
+            }}>
+              Фото можно добавить после создания врача
+            </p>
+          )}
+        </div>
+
+      </div>
     </>
   );
 }

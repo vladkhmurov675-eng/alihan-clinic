@@ -49,7 +49,7 @@ export default function DoctorCard({ doctor: d, color, showBookingButton = true,
           <DoctorAvatar
             avatar={d.avatar}
             name={d.name}
-            size={100000}
+            size={100}
             color={specColor}
           />
         </div>

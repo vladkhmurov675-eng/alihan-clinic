@@ -1,5 +1,6 @@
 "use client";
 
+import { startPPRNavigation } from "next/dist/client/components/router-reducer/ppr-navigations";
 import { useState, useCallback } from "react";
 
 interface Props {
@@ -19,9 +20,11 @@ const DOWS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 function pad(n: number) {
   return String(n).padStart(2, "0");
 }
-function toStr(y: number, m: number, d: number) {
+function calendarDateToStr(y: number, m: number, d: number) {
   return `${y}-${pad(m + 1)}-${pad(d)}`;
 }
+
+
 function datesInRange(a: string, b: string): string[] {
   const start = new Date(Math.min(+new Date(a), +new Date(b)));
   const end = new Date(Math.max(+new Date(a), +new Date(b)));
@@ -34,6 +37,53 @@ function datesInRange(a: string, b: string): string[] {
   return out;
 }
 
+  function groupDisabledDates (dates: Set<string>)  {
+    const oneDay = 24 * 60 * 60 * 1000;
+    const d = Array.from(dates).map(dates => new Date(dates))
+
+    
+    type periodsAndDays = {
+        periods: Array<{start: Date; end: Date}>;
+        days: Date[]
+    }
+    const disabledDates: periodsAndDays = {
+        periods: [],
+        days: []
+    };
+
+    if(d.length === 0) return disabledDates;
+    let start = d[0];
+    let previous = d[0];
+
+    const flush = () => {
+    if (start.getTime() === previous.getTime()) {
+      disabledDates.days.push(start);
+    } else {
+      disabledDates.periods.push({ start: start, end: previous });
+    }
+  };
+
+  for (let i = 1; i < d.length; i++) {
+    const current = d[i];
+    const gap = current.getTime() - previous.getTime();
+
+    if (gap === oneDay) {
+      previous = current;
+    } else {
+      flush();
+      start = current;
+      previous = current;
+    }
+  }
+
+    flush();
+    console.log(disabledDates.days[0]);
+    return disabledDates;
+    }
+
+
+
+
 export default function DisabledDatesPicker({ value, onChange }: Props) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -45,29 +95,8 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
   const [isDeleteMode, setDeleteMode] = useState(false);
   const [decade, setDecade] = useState<number[]>(currentDecade); 
   const disabled = new Set(value ? value.split(",").filter(Boolean) : []);
+  const groupedDates = groupDisabledDates(disabled);
   
-  const getPeriods = (dates: string[]) => {
-    const oneDay = 24 * 60 * 60 * 1000;
-    const d = dates.map(date => new Date(date))
-    const periods = [];
-    let start = d[0];
-    let previous = d[0];
-    for (let i: number = 1; i < d.length; i++){
-      const  current = d[i];
-      if(current.getTime() - previous.getTime() > oneDay ){
-        periods.push({
-        start: start,
-        end: previous
-    });
-        start = current;
-      }
-      previous = current;
-      }
-      periods.push({start: start, end: previous});
-    
-    return periods;
-    }
-
   const commit = useCallback(
     (set: Set<string>) => {
       onChange([...set].sort().join(","));
@@ -111,12 +140,31 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
     setHoverDay(null);
   };
 
-  const removeDate = (d: string) => {
-    const next = new Set(disabled);
-    next.delete(d);
-    commit(next);
+  const removeDate = (d: Date) => {
+    const day = d.toISOString().split("T")[0];
+    disabled.delete(day);
+    commit(disabled);
   };
-
+ const removeRange = (start: Date, end: Date) => {
+    const splitStart = start.toISOString().split("T");
+    const splitEnd = end.toISOString().split("T");
+    let isInRange: boolean = false;
+  outer:
+   for (const date of disabled.values()){
+      if(isInRange){
+        disabled.delete(date);
+      }
+      switch (date){ 
+          case(splitStart[0]):  isInRange = true;
+            disabled.delete(date);
+            break; 
+          case(splitEnd[0]):   isInRange = false;
+            disabled.delete(date);
+            break outer; 
+      }
+    }
+    commit(disabled);
+  }
   const prevMonth = () => {
     if (month === 0) {
       setMonth(11);
@@ -141,7 +189,7 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
   const sorted = [...disabled].sort();
 
   return (
-    <div className = "form-container" style={{maxWidth: 320}}>
+    <div className="form-container" style={{ maxWidth: 320 }}>
       {/* Mode toggle */}
       <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
         {(["single", "period"] as const).map((m) => (
@@ -157,7 +205,8 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
               flex: 1,
               padding: "5px 8px",
               border: "1px solid",
-              borderColor: mode === m ? "var(--color-primary)" : "var(--border-color)",
+              borderColor:
+                mode === m ? "var(--color-primary)" : "var(--border-color)",
               borderRadius: 7,
               background: mode === m ? "rgba(45,106,45,0.1)" : "transparent",
               color: mode === m ? "var(--color-primary)" : "var(--text-muted)",
@@ -171,48 +220,65 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
           </button>
         ))}
       </div>
-      
-      {/* Year grid */}
-      {step === "year" && ( <>
-      <div style={{display: "flex", alignItems: "center"}}>
-      <button type = "button" className = "btn-text" onClick = {() => setDecade(decade.map(d => d - 10))}> ‹ </button>
 
-        <div
-          style={{
-            position: "relative",
-            display: "grid",
-            gridAutoFlow: "column",
-            gridTemplateRows: "repeat(5, 1fr)",
-            gap: 4,
-            height: "auto",
-            width: "inherit",
-            marginBottom: 8,
-            border: "1px solid var(--border-color)",
-            borderRadius: 7,
-            padding: 6,
-          }}
-        >
-          {decade.toReversed().map((y) => (
+      {/* Year grid */}
+      {step === "year" && (
+        <>
+          <div style={{ display: "flex", alignItems: "center" }}>
             <button
-              key={y}
               type="button"
-              onClick={() => {
-                setYear(y);
-                setStep("month");
-              }}
-              className = "btn-text"
-              style = {{backgroundColor: y === year ?  "var(--color-primary)" : '',
-                color: y === year ? "white" : '',
-                justifyContent: "center"
-               }}
+              className="btn-text"
+              onClick={() => setDecade(decade.map((d) => d - 10))}
             >
-              {y}
+              {" "}
+              ‹{" "}
             </button>
-          ))}
-        </div>
-       <button type = "button" className="btn-text" onClick={() => setDecade(decade.map(d => d + 10))}> › </button>
-      </div>
-      </>)}
+
+            <div
+              style={{
+                position: "relative",
+                display: "grid",
+                gridAutoFlow: "column",
+                gridTemplateRows: "repeat(5, 1fr)",
+                gap: 4,
+                height: "auto",
+                width: "inherit",
+                marginBottom: 8,
+                border: "1px solid var(--border-color)",
+                borderRadius: 7,
+                padding: 6,
+              }}
+            >
+              {decade.toReversed().map((y) => (
+                <button
+                  key={y}
+                  type="button"
+                  onClick={() => {
+                    setYear(y);
+                    setStep("month");
+                  }}
+                  className="btn-text"
+                  style={{
+                    backgroundColor: y === year ? "var(--color-primary)" : "",
+                    color: y === year ? "white" : "",
+                    justifyContent: "center",
+                  }}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="btn-text"
+              onClick={() => setDecade(decade.map((d) => d + 10))}
+            >
+              {" "}
+              ›{" "}
+            </button>
+          </div>
+        </>
+      )}
 
       {step === "month" && (
         <>
@@ -231,14 +297,13 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
             <button
               onClick={() => setStep("year")}
               title="Изменить год"
-              className = "btn-text"
+              className="btn-text"
               style={{
                 fontWeight: 600,
                 fontSize: 13,
                 color: "var(--text-primary)",
                 cursor: "pointer",
               }}
-              
             >
               {MONTHS[month]} {year}
             </button>
@@ -273,7 +338,7 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
               <div key={`e${i}`} />
             ))}
             {Array.from({ length: totalDays }, (_, i) => i + 1).map((d) => {
-              const ds = toStr(year, month, d);
+              const ds = calendarDateToStr(year, month, d);
               const isDisabled = disabled.has(ds);
               const isStart = mode === "period" && rangeStart === ds;
               const isPreview =
@@ -328,8 +393,15 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
               );
             })}
           </div>
- 
-          <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginTop: 10 }}>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "flex-start",
+              marginTop: 10,
+            }}
+          >
             <button
               type="button"
               onClick={() => setDeleteMode((v) => !v)}
@@ -338,7 +410,9 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
                 border: "1px solid var(--border-color)",
                 borderRadius: 6,
                 cursor: "pointer",
-                background: isDeleteMode ? "rgba(220,38,38,0.1)" : "transparent",
+                background: isDeleteMode
+                  ? "rgba(220,38,38,0.1)"
+                  : "transparent",
                 color: isDeleteMode ? "#b91c1c" : "var(--text-primary)",
                 fontWeight: 600,
                 whiteSpace: "nowrap",
@@ -350,7 +424,7 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
           {/* Hint */}
           <p
             style={{
-              fontSize: 11,
+              fontSize: 14,
               color: "var(--text-muted)",
               marginTop: 6,
               lineHeight: 1.4,
@@ -362,13 +436,57 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
                 ? "Выберите конечный день периода."
                 : "Выберите начальный день периода."}
           </p>
-
         </>
       )}
-      {Array.from(disabled).map((v) => (<>
-          <h1>Периоды </h1>
-          <div></div>
-      </>))}
+
+      {groupedDates.periods.map((p, i) => (
+        <div key={i}>
+          {" "}
+          <h3>Период {i + 1}</h3>
+          <button
+            className="btn-accent"
+            style={{
+              backgroundColor: "rgba(220,38,38,0.15)",
+              color: "#b91c1c",
+              fontWeight: "600",
+              padding: "8px",
+              marginBlock: "4px",
+              border: "2px",
+              borderRadius: "10px",
+            }}
+            type="button"
+            onClick={() => removeRange(p.start, p.end)}
+          >
+            {p.start.toLocaleDateString("ru-RU")}-
+            {p.end.toLocaleDateString("ru-RU")}
+          </button>
+        </div>
+      ))}
+      {groupedDates.days.length > 0 && (
+        <>
+          <h3>Дни</h3>
+          {groupedDates.days.map((d, i) => (
+            <button
+              className="btn-accent"
+              style={{
+                backgroundColor: "rgba(220,38,38,0.15)",
+                color: "#b91c1c",
+                fontWeight: "600",
+                padding: "8px",
+                marginBlock: "4px",
+                border: "2px",
+                borderRadius: "10px",
+              }}
+              key={i}
+              type="button"
+              onClick={() => removeDate(d)}
+            >
+              {d.toLocaleDateString("ru-RU")}
+            </button>
+          ))}
+        </>
+      )}
+      <div>Нажмите "Сохранить настройки", чтобы сохранить изменения в календаре и профиле</div>
     </div>
   );
 }

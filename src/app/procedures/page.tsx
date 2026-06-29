@@ -22,8 +22,8 @@ export default async function ProceduresPage() {
 
       {/* Hero */}
       <section style={{
-        background: "linear-gradient(135deg, #8b8d32, #b9f614)",
-        padding: "3.5rem 1.5rem",
+        background: "linear-gradient(135deg, #233a4c, #74e5e9)",
+        padding: "3.5rem 1.5rem", 
         textAlign: "center",
         color: "#fff",
       }}>

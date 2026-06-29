@@ -5,6 +5,7 @@ import { prisma } from '../db';
 import { cookies } from 'next/headers';
 import { sendWhatsAppMessage } from '@/app/lib/whatsapp';
 import { uploadFile } from '@/app/lib/r2';
+import * as crypto from 'crypto';
 // ─────────────────────────────────────────
 // SESSION HELPERS
 // ─────────────────────────────────────────
@@ -113,6 +114,45 @@ export async function loginAdmin(phone: string, password: string) {
 
 export async function logoutDoctor() { return logout(); }
 export async function logoutAdmin() { return logout(); }
+
+
+// ─────────────────────────────────────────
+// OTP
+// ─────────────────────────────────────────
+
+export async function generateOTP(phone: string) {
+  const createdAt = new Date();
+  const expiresAt = new Date(createdAt.getTime() + (1.5*60*1000));
+  let password = '';
+  while (password.length < 4){
+    password += crypto.randomInt(0,10).toString();
+  }
+  await sendOTP(phone, password);
+  const OTP = await bcrypt.hash(password, 10);
+  return prisma.otpCode.create({
+    data: {
+      phone: phone, code: OTP,  createdAt: createdAt, expiresAt: expiresAt, used: false
+    }
+
+  })
+}
+
+export async function getOTP(phone: string){
+  return prisma.otpCode.findFirst({
+    where: {phone:phone, used: false, expiresAt:{gt: new Date()}}, select: {code: true}})
+}
+
+export async function verifyOTP(phone: string, input: string) {
+  const otp = await getOTP(phone);
+  if (!otp) {
+    return false;
+  }
+  return await bcrypt.compare(input, otp.code);
+}
+
+export async function sendOTP(phone: string, password: string){
+  sendWhatsAppMessage(phone, `Здравствуйте! Введите ваш код: ${password}`)
+}
 
 // ─────────────────────────────────────────
 // DOCTORS

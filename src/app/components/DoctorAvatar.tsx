@@ -16,7 +16,7 @@ export default function DoctorAvatar({ avatar, name, size = 52, color = 'var(--c
   return (
     <div style={{
       width: '100%', height: '100%', flexShrink: 0,
-      overflow: 'hidden',
+      overflow: 'overlay',
       background: `linear-gradient(135deg, ${color}22, ${color}55)`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       color, fontWeight: 700, fontSize: size * 0.3,
