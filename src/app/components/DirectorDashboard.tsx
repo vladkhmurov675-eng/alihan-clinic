@@ -6,8 +6,8 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
-import { TrendingUp, Users, Calendar, DollarSign, Filter, RefreshCw, X } from 'lucide-react';
-import { Appointment } from './types';
+import { TrendingUp, Users, Calendar, DollarSign, Filter, RefreshCw, X, Download, FileText } from 'lucide-react';
+import { Appointment, Doctor, Procedure } from './types';
 import SearchBar from './SearchBar';
 
 
@@ -87,9 +87,11 @@ const PRESETS = [
 
 // ── Main Component ─────────────────────────────────────────────
 export default function DirectorDashboard({
-  initialAppointments, initialFrom, initialTo,
+  initialAppointments, doctors, procedures, initialFrom, initialTo,
 }: {
   initialAppointments: Appointment[];
+  doctors?: Doctor[];
+  procedures?: Procedure[];
   initialFrom: string;
   initialTo: string;
 }) {
@@ -97,6 +99,39 @@ export default function DirectorDashboard({
   const [from, setFrom] = useState(initialFrom);
   const [to, setTo] = useState(initialTo);
   const [loading, setLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  async function exportPDF() {
+    setPdfLoading(true);
+    try {
+      const { pdf } = await import('@react-pdf/renderer');
+      const { DirectorPDFDocument } = await import('./DirectorPDFReport');
+      const blob = await pdf(
+        <DirectorPDFDocument
+          from={from}
+          to={to}
+          stats={stats}
+          byDoctor={byDoctor}
+          byProcedure={byProcedure}
+          byStatus={byStatus}
+          appointments={tableFiltered}
+        />
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `отчет_клиники_${from}_${to}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('PDF export error:', err);
+    } finally {
+      setPdfLoading(false);
+    }
+  }
 
   // Filters
   const [searchMode, setSearchMode] = useState<
@@ -285,6 +320,21 @@ export default function DirectorDashboard({
                 {loading ? 'Загрузка...' : 'Применить'}
               </button>
             </div>
+
+            {/* PDF Export Button */}
+            <button
+              onClick={exportPDF}
+              className="btn btn-accent"
+              style={{ padding: '0.4rem 1rem', fontSize: '0.82rem', gap: '0.4rem', marginLeft: 'auto' }}
+              disabled={pdfLoading}
+            >
+              {pdfLoading ? (
+                <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} />
+              ) : (
+                <Download size={14} />
+              )}
+              {pdfLoading ? 'Формирование PDF...' : 'Экспорт PDF'}
+            </button>
           </div>
         </div>
 
