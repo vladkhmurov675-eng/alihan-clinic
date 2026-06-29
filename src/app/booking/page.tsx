@@ -203,7 +203,12 @@ function BookingForm() {
     }
 
         if (step === 'otp') {
-            return ( <div style={{justifyContent: 'center'}}>
+            return ( <div style={{minHeight: "100vh",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    padding: "2rem",
+                    background: "var(--bg-primary)",}}>
             <OTPForm
                 phone={patientPhone}
                 title="Подтвердите запись"

@@ -1,3 +1,5 @@
+import {Prisma} from '@prisma/client'; 
+
 interface Doctor {
   id: number; name: string; phone: string; specialization: string;
   avatar: string | null; slotDuration: number; workStartTime: string;
@@ -44,5 +46,11 @@ interface DoctorWithRelations extends Doctor {
   appointments: Appointment[];
 }
 
+type AppointmentWithRelations = Prisma.AppointmentGetPayload<{
+  include: {
+    doctor: true;
+    procedure: true;
+  };
+}>;
 
-export type { Doctor, Procedure, Appointment, Setting, WhatsAppLog, DoctorFormData, ProcedureFormData, AppointmentFormData, DoctorWithRelations };
+export type { Doctor, Procedure, Appointment, Setting, WhatsAppLog, DoctorFormData, ProcedureFormData, AppointmentFormData, DoctorWithRelations, AppointmentWithRelations };

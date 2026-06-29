@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 import { sendWhatsAppMessage } from '@/app/lib/whatsapp';
 import { uploadFile } from '@/app/lib/r2';
 import * as crypto from 'crypto';
-import {AppointmentWithRelations} from './components/types';
+import {Appointment, Procedure, Doctor} from './components/types';
 // ─────────────────────────────────────────
 // SESSION HELPERS
 // ─────────────────────────────────────────
@@ -406,7 +406,7 @@ export async function getOccupiedSlots(doctorId: number, date: string): Promise<
 
 export async function bookAppointment(
   formData: FormData
-): Promise<{ success: boolean; appointment?: AppointmentWithRelations; error?: string }> {
+): Promise<{ success: boolean; appointment?: Appointment; error?: string }> {
   try {
     const doctorIdStr = formData.get('doctorId') as string;
     const patientName = formData.get('patientName') as string;
