@@ -3,20 +3,11 @@
 import { Suspense } from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { getDoctors, getOccupiedSlots, bookAppointment, getProceduresByDoctor } from '../actions';
+import OTPForm from '../components/forms/OTPForm';
 import { User, Phone, Clipboard, FileText, CheckCircle } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import { Doctor, Procedure} from '../components/types';
 
-interface AppointmentResult {
-    id: number;
-    patientName: string;
-    patientPhone: string;
-    date: string;
-    time: string;
-    price: number | null;
-    doctor: { name: string; specialization: string };
-    procedure: { name: string } | null;
-}
+import { Appointment, Doctor, Procedure} from '../components/types';
 
 function generateSlots(start: string, end: string, duration: number): string[] {
     const slots: string[] = [];
@@ -59,8 +50,9 @@ function BookingForm() {
     const [file, setFile] = useState<File | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState<AppointmentResult | null>(null);
-
+    const [success, setSuccess] = useState<Appointment | null>(null);
+    const [step, setStep] = useState<'form' | 'otp' | 'done'>('form');
+    const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
     const searchParams = useSearchParams();
 
     // Load doctors once on mount
@@ -141,18 +133,26 @@ function BookingForm() {
             formData.append('complaint', complaint);
             if (file) formData.append('file', file);
 
-            const res = await bookAppointment(formData);
-            if (res.success && res.appointment) {
-                setSuccess(res.appointment as AppointmentResult);
-            } else {
-                setError(res.error || 'Ошибка при записи');
-            }
+            setPendingFormData(formData);
+            setPatientPhone(formData.get('patientPhone') as string);
+            setStep('otp');
         } catch {
             setError('Ошибка сервера. Попробуйте ещё раз.');
-        } finally {
-            setSubmitting(false);
-        }
+        } 
     }
+
+
+    const handleOtpResult = async (verified: boolean) => {
+        if (!verified || !pendingFormData) return;
+
+    // OTP passed — now actually create the appointment
+    const result = await bookAppointment(pendingFormData);
+    if (result.success) {
+      setSubmitting(false);
+      setSuccess(result.appointment)   
+      setStep('done');
+    }
+    };
 
     function resetForm() {
         setSuccess(null);
@@ -162,7 +162,7 @@ function BookingForm() {
         setProcedureId('');
     }
 
-    if (success) {
+    if (step === 'done') {
         return (
             <div style={{ background: 'var(--bg-primary)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
                 <div className="card animate-fade-in" style={{ padding: '2.5rem', maxWidth: 480, width: '100%', textAlign: 'center' }}>
@@ -202,6 +202,20 @@ function BookingForm() {
         );
     }
 
+        if (step === 'otp') {
+            return ( <div style={{justifyContent: 'center'}}>
+            <OTPForm
+                phone={patientPhone}
+                title="Подтвердите запись"
+                description={`Введите код, отправленный на ${patientPhone}, чтобы подтвердить бронирование`}
+                onVerified={handleOtpResult}
+                onCancel={() => setStep('form')}
+            />
+            </div>
+            );
+        }
+
+   if (step === 'form') {     
     return (
         <div style={{ background: 'var(--bg-primary)', minHeight: '100vh' }}>
             <section style={{
@@ -409,6 +423,7 @@ function BookingForm() {
             </div>
         </div>
     );
+}
 }
 
 export default function BookingPage() {

@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { sendWhatsAppMessage } from '@/app/lib/whatsapp';
 import { uploadFile } from '@/app/lib/r2';
 import * as crypto from 'crypto';
+import {AppointmentWithRelations} from './components/types';
 // ─────────────────────────────────────────
 // SESSION HELPERS
 // ─────────────────────────────────────────
@@ -119,40 +120,108 @@ export async function logoutAdmin() { return logout(); }
 // ─────────────────────────────────────────
 // OTP
 // ─────────────────────────────────────────
-
-export async function generateOTP(phone: string) {
-  const createdAt = new Date();
-  const expiresAt = new Date(createdAt.getTime() + (1.5*60*1000));
-  let password = '';
-  while (password.length < 4){
-    password += crypto.randomInt(0,10).toString();
-  }
-  await sendOTP(phone, password);
-  const OTP = await bcrypt.hash(password, 10);
-  return prisma.otpCode.create({
-    data: {
-      phone: phone, code: OTP,  createdAt: createdAt, expiresAt: expiresAt, used: false
+const OTP_LENGTH = 4;
+const OTP_TTL_MS = 90 * 1000;           // 90 seconds
+const RESEND_COOLDOWN_MS = 30 * 1000;   // can't request a new code more than once every 30s
+const MAX_ATTEMPTS = 5;                 // wrong guesses allowed before the code is locked
+ 
+export async function generateOTP(
+  phone: string
+): Promise<{ success: boolean; error?: string; cooldownMs?: number }> {
+ 
+  // Prevent spamming — check for a recent, still-valid code for this phone
+  const recent = await prisma.otpCode.findFirst({
+    where: { phone, used: false, expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: 'desc' },
+  });
+ 
+  if (recent) {
+    const age = Date.now() - recent.createdAt.getTime();
+    if (age < RESEND_COOLDOWN_MS) {
+      return {
+        success: false,
+        error: 'Код уже отправлен. Подождите перед повторной отправкой.',
+        cooldownMs: RESEND_COOLDOWN_MS - age,
+      };
     }
-
-  })
-}
-
-export async function getOTP(phone: string){
-  return prisma.otpCode.findFirst({
-    where: {phone:phone, used: false, expiresAt:{gt: new Date()}}, select: {code: true}})
-}
-
-export async function verifyOTP(phone: string, input: string) {
-  const otp = await getOTP(phone);
-  if (!otp) {
-    return false;
   }
-  return await bcrypt.compare(input, otp.code);
+ 
+  // Invalidate any previous unused codes for this phone so only the
+  // newest one is ever valid — fixes the "two valid codes at once" bug
+  await prisma.otpCode.updateMany({
+    where: { phone, used: false },
+    data: { used: true },
+  });
+ 
+  const createdAt = new Date();
+  const expiresAt = new Date(createdAt.getTime() + OTP_TTL_MS);
+ 
+  let code = '';
+  while (code.length < OTP_LENGTH) {
+    code += crypto.randomInt(0, 10).toString();
+  }
+ 
+  const hashed = await bcrypt.hash(code, 10);
+ 
+  await prisma.otpCode.create({
+    data: { phone, code: hashed, createdAt, expiresAt, used: false, attempts: 0 },
+  });
+ 
+  await sendOTP(phone, code);
+ 
+  return { success: true };
+}
+ 
+export async function getOTP(phone: string) {
+  return prisma.otpCode.findFirst({
+    where: { phone, used: false, expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: 'desc' }, // always the newest valid code
+  });
+}
+ 
+export async function verifyOTP(
+  phone: string,
+  input: string
+): Promise<{ success: boolean; error?: string }> {
+ 
+  const otp = await getOTP(phone);
+ 
+  if (!otp) {
+    return { success: false, error: 'Код не найден или истёк. Запросите новый.' };
+  }
+ 
+  if (otp.attempts >= MAX_ATTEMPTS) {
+    // Lock it out permanently so it can't keep being guessed against
+    await prisma.otpCode.update({ where: { id: otp.id }, data: { used: true } });
+    return { success: false, error: 'Превышено количество попыток. Запросите новый код.' };
+  }
+ 
+  const matches = await bcrypt.compare(input, otp.code);
+ 
+  if (!matches) {
+    await prisma.otpCode.update({
+      where: { id: otp.id },
+      data: { attempts: otp.attempts + 1 },
+    });
+    const remaining = MAX_ATTEMPTS - (otp.attempts + 1);
+    return {
+      success: false,
+      error: remaining > 0
+        ? `Неверный код. Осталось попыток: ${remaining}`
+        : 'Превышено количество попыток. Запросите новый код.',
+    };
+  }
+ 
+  // Correct — mark used immediately so this code can never be replayed
+  await prisma.otpCode.update({ where: { id: otp.id }, data: { used: true } });
+ 
+  return { success: true };
+}
+ 
+export async function sendOTP(phone: string, code: string) {
+  await sendWhatsAppMessage(phone, `Здравствуйте! Ваш код подтверждения: ${code}\nКод действителен 90 секунд.`);
 }
 
-export async function sendOTP(phone: string, password: string){
-  sendWhatsAppMessage(phone, `Здравствуйте! Введите ваш код: ${password}`)
-}
 
 // ─────────────────────────────────────────
 // DOCTORS
@@ -337,7 +406,7 @@ export async function getOccupiedSlots(doctorId: number, date: string): Promise<
 
 export async function bookAppointment(
   formData: FormData
-): Promise<{ success: boolean; appointment?: Record<string, any>; error?: string }> {
+): Promise<{ success: boolean; appointment?: AppointmentWithRelations; error?: string }> {
   try {
     const doctorIdStr = formData.get('doctorId') as string;
     const patientName = formData.get('patientName') as string;
