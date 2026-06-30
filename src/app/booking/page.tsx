@@ -54,7 +54,6 @@ function BookingForm() {
     const [step, setStep] = useState<'form' | 'otp' | 'done'>('form');
     const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
     const searchParams = useSearchParams();
-
     // Load doctors once on mount
     useEffect(() => {
         getDoctors().then(d => setDoctors(d as Doctor[]));
@@ -180,11 +179,11 @@ function BookingForm() {
                         fontSize: '0.92rem',
                     }}>
                         {[
-                            { label: 'Пациент', value: success.patientName },
-                            { label: 'Врач', value: `${success.doctor.name} · ${success.doctor.specialization}` },
-                            ...(success.procedure ? [{ label: 'Процедура', value: success.procedure.name }] : []),
-                            { label: 'Стоимость', value: `${success.price ?? 5000} ₸` },
-                            { label: 'Дата и время', value: `${success.date} в ${success.time}` },
+                            { label: 'Пациент', value: success?.patientName },
+                            { label: 'Врач', value: `${success?.doctor.name} · ${success?.doctor.specialization}` },
+                            ...(success?.procedure ? [{ label: 'Процедура', value: success.procedure.name }] : []),
+                            { label: 'Стоимость', value: `${success?.price ?? 5000} ₸` },
+                            { label: 'Дата и время', value: `${success?.date} в ${success?.time}` },
                             { label: 'Статус', value: 'Ожидает подтверждения' },
                         ].map(({ label, value }) => (
                             <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
@@ -280,7 +279,7 @@ function BookingForm() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                             <div className="input-group" style={{ marginBottom: 0 }}>
                                 <label className="input-label">Дата *</label>
-                                <input
+                                <input suppressHydrationWarning
                                     type="date"
                                     className="form-control"
                                     style={{ width: '100%' }}
@@ -288,6 +287,7 @@ function BookingForm() {
                                     value={date}
                                     disabled={!doctorId}
                                     onChange={e => setDate(e.target.value)}
+                                     
                                 />
                                 {dateError && (
                                     <span style={{ fontSize: '0.78rem', color: 'var(--color-danger)', marginTop: 4 }}>
@@ -298,7 +298,7 @@ function BookingForm() {
 
                             <div className="input-group" style={{ marginBottom: 0 }}>
                                 <label className="input-label">Время *</label>
-                                <select
+                                <select suppressHydrationWarning
                                     className="form-control"
                                     style={{ width: '100%' }}
                                     value={time}

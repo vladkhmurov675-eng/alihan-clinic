@@ -117,6 +117,24 @@ export async function logoutDoctor() { return logout(); }
 export async function logoutAdmin() { return logout(); }
 
 
+export async function changePassword(phone: string, password: string) {
+    if (await hasFoundPhoneNumber(phone)){
+    const hashedPassword = await bcrypt.hash(password, 10);
+    return prisma.admin.update({where: {phone: phone}, 
+    data: {password: hashedPassword}}) 
+    }
+    else {
+      throw new Error(
+        "Ошибка! Пароль не смог быть изменен, так как не был найден номер телефона в базе данных, или было найдено несколько админов с одним и тем же номером телефона",
+      );
+    }
+}
+
+export async function hasFoundPhoneNumber(phone:string){
+  return (await prisma.admin.findUnique({where: {phone: phone}}) !== null); 
+  
+}
+
 // ─────────────────────────────────────────
 // OTP
 // ─────────────────────────────────────────
@@ -415,7 +433,7 @@ export async function bookAppointment(
     const date = formData.get('date') as string;
     const time = formData.get('time') as string;
     const file = formData.get('file') as File | null;
-    const procedureIdStr = formData.get('procedureId') as string | null;
+    const procedureIdStr = formData.get('procedureId') as string;
     const phoneRegex = /^\+7\d{10}$/;
 
     if (!doctorIdStr || !patientName || !patientPhone || !date || !time) {
@@ -440,19 +458,17 @@ export async function bookAppointment(
     let procedureId: number | null = null;
     let price = 5000;
 
-    if (procedureIdStr) {
-      procedureId = parseInt(procedureIdStr);
-      const proc = await prisma.procedure.findUnique({ where: { id: procedureId } });
+    procedureId = parseInt(procedureIdStr);
+    const proc = await prisma.procedure.findUnique({ where: { id: procedureId } });
       if (proc) {
         price = proc.price;
       }
-    }
 
     const appointment = await prisma.appointment.create({
       data: {
         doctorId, procedureId, patientName, patientPhone,
         complaint: complaint || 'Жалобы отсутствуют',
-        date, time, filePath, status: 'PENDING', price,
+        date, time, filePath, status: 'PENDING', price
       },
       include: { doctor: true, procedure: true },
     });

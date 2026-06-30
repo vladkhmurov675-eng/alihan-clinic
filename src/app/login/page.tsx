@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, Phone, Eye, EyeOff } from 'lucide-react';
 import { login } from '../actions';
+import OTPForm from '../components/forms/OTPForm';
+import Link from 'next/link';
 
 const KZ_PHONE_REGEX = /^\+7\d{10}$/;
 
@@ -28,7 +30,8 @@ export default function LoginPage() {
   const [phoneError, setPhoneError] = useState('');
   const [error,      setError]      = useState('');
   const [loggingIn,  setLoggingIn]  = useState(false);
-
+  
+  
   function handlePhoneChange(raw: string) {
     const normalized = normalizePhone(raw);
     setPhone(normalized);
@@ -184,6 +187,8 @@ export default function LoginPage() {
               >
                 {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
+              <Link href='login/forgotpassword'>Забыли пароль?</Link>
+
             </div>
           </div>
 
@@ -221,3 +226,6 @@ export default function LoginPage() {
     </div>
   );
 }
+
+
+
