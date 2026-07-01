@@ -118,16 +118,18 @@ export async function logoutAdmin() { return logout(); }
 
 
 export async function changePassword(phone: string, password: string) {
-    if (await hasFoundPhoneNumber(phone)){
+  try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    return prisma.admin.update({where: {phone: phone}, 
-    data: {password: hashedPassword}}) 
-    }
-    else {
-      throw new Error(
-        "Ошибка! Пароль не смог быть изменен, так как не был найден номер телефона в базе данных, или было найдено несколько админов с одним и тем же номером телефона",
-      );
-    }
+
+    await prisma.admin.update({
+      where: { phone },
+      data: { password: hashedPassword },
+    });
+
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function hasFoundPhoneNumber(phone:string){
@@ -287,6 +289,8 @@ export async function updateDoctorByAdmin(id: number, data: Record<string, any>)
 
 export async function deleteDoctor(id: number) {
   if (!(await isAdminLoggedIn())) throw new Error('Access denied');
+  await prisma.appointment.deleteMany({where: {doctorId: id}}); 
+  await prisma.procedure.deleteMany({where: {doctorId: id}});
   await prisma.doctor.delete({ where: { id } });
   return { success: true };
 }

@@ -39,18 +39,18 @@ export default function DoctorForm({
   return (
     <>
       {ToastComponent}
-      <div style={{
+      <div className = 'form-container' style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 200px',
-        gap: '2rem',
-        alignItems: 'flex-start',
+        gridTemplateColumns: '2fr 1fr',
+        gap: '1.5rem',
+        alignItems: 'start',
       }}>
 
         {/* ── Main form (left, fills remaining space) ── */}
         <form onSubmit={onSubmit}>
-          <div className = 'form-container' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
 
-            <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="input-group" style={{ gridColumn: '1 / 2' }}>
               <label className="input-label">ФИО</label>
               <input
                 className="form-control"
@@ -95,7 +95,7 @@ export default function DoctorForm({
               />
             </div>
 
-            <div className="input-group">
+            <div className="input-group" style = {{gridColumn: '1 / -1'}}>
               <label className="input-label">Опыт (лет)</label>
               <input
                 type="number"
@@ -153,7 +153,7 @@ export default function DoctorForm({
               />
             </div>
 
-            <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="input-group">
               <label className="input-label">
                 Выходные дни (0=Вс, 1=Пн … 6=Сб, через запятую)
               </label>
@@ -166,7 +166,7 @@ export default function DoctorForm({
               />
             </div>
 
-            <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="input-group">
               <label className="input-label">Нерабочие дни (выберите в календаре)</label>
               <DisabledDatesPicker
                 value={form.disabledDates}
@@ -175,7 +175,7 @@ export default function DoctorForm({
             </div>
 
             {isAdmin && (
-              <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+              <div className="input-group">
                 <label className="input-label">
                   Новый пароль (оставьте пустым, чтобы не менять)
                 </label>
@@ -206,11 +206,11 @@ export default function DoctorForm({
         <div style={{ height: 'auto', width: '100%',
                   backgroundColor: 'white',
                   padding: 10,
-                  border: '3px solid #e0e0e0', // ← you also had `border: '3px'` which is invalid (missing style+color)
+                  border: '3px solid #e0e0e0', 
                   borderRadius: 10,
-                  flexShrink: 0}}>
+                  flexShrink: 0, float: 'right'}}>
           
-          <div style={{ width: 'inherit', height: 270, margin: '0 auto' }}>
+          <div style={{ width: '100%', height: 450, margin: 'auto' }}>
           <DoctorAvatar
             name={form.name || 'Н И'}
             avatar={currentAvatar}
