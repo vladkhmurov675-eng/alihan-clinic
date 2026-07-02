@@ -1,4 +1,4 @@
-import {Prisma} from '@prisma/client'; 
+import { Prisma } from '@prisma/client';
 
 interface Doctor {
   id: number; name: string; phone: string; specialization: string;
@@ -25,8 +25,19 @@ interface Setting {
 }
 
 interface WhatsAppLog {
-    id: number; sentAt: Date; recipientName: string; recipientPhone: string;
-    message: string; status: string;
+  id: number; sentAt: Date; recipientName: string; recipientPhone: string;
+  message: string; status: string;
+}
+
+
+interface Review {
+  id: number;
+  name: string;
+  date: Date;
+  phone: string;
+  reviewText: string;
+  avatar: string;
+  rating: number;
 }
 
 
@@ -53,4 +64,16 @@ type AppointmentWithRelations = Prisma.AppointmentGetPayload<{
   };
 }>;
 
-export type { Doctor, Procedure, Appointment, Setting, WhatsAppLog, DoctorFormData, ProcedureFormData, AppointmentFormData, DoctorWithRelations, AppointmentWithRelations };
+export type {
+  Doctor,
+  Procedure,
+  Appointment,
+  Setting,
+  WhatsAppLog,
+  Review,
+  DoctorFormData,
+  ProcedureFormData,
+  AppointmentFormData,
+  DoctorWithRelations,
+  AppointmentWithRelations,
+};

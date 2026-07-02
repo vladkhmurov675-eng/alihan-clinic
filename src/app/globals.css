@@ -759,3 +759,56 @@ h6 {
   }
 }
 
+ .review-card {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  grid-template-areas: 
+    'avatar name date'
+    'avatar star-rating star-rating'
+    'review-text review-text review-text';
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  gap: 8px;
+  width: 600px;
+  padding: 16px;
+  align-items: center;
+}
+
+.avatar {
+  grid-area: avatar;
+  border-radius: 50%;
+  object-fit: cover;
+  align-self: start;
+}
+
+.name {
+  grid-area: name;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.date {
+  grid-area: date;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.star-rating {
+  grid-area: star-rating;
+  display: flex;
+  color: #f59e0b;
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+}
+
+.review-text {
+  grid-area: review-text;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  padding-top: 4px;
+  border-top: 1px solid #f0f0f0;
+}

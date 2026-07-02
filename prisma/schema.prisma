@@ -83,6 +83,16 @@ model OtpCode {
   createdAt DateTime @default(now())
 }
 
+model Review {
+  id       Int      @id @default(autoincrement())
+  name     String   
+  phone    String   @unique
+  date     DateTime @default(now())
+  avatar   String?
+  rating   Float    @default(0.0)
+  reviewText String
+}
+
 model Setting {
   key   String @id
   value String

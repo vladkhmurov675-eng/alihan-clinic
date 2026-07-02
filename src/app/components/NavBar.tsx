@@ -9,10 +9,10 @@ import { LogOut, Stethoscope, ShieldCheck, BarChart2, LogIn, Menu, X } from 'luc
 const PUBLIC_NAV = [
   { label: 'Главная', href: '/' },
   { label: 'О клинике', href: '/about' },
+  { label: 'Отзывы', href: '/reviews'},
   { label: 'Врачи', href: '/doctors' },
   { label: 'Услуги', href: '/services' },
   { label: 'Процедурный кабинет', href: '/procedures' },
-  { label: 'Онлайн-запись', href: '/booking' },
   { label: 'Контакты', href: '/contacts' },
 ];
 

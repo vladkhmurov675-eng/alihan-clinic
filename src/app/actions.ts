@@ -691,3 +691,9 @@ export async function getAllAppointmentsForAdmin() {
     take: 500,
   });
 }
+
+export async function getAllReviews() {
+  return prisma.review.findMany({
+    orderBy: { date: 'desc' },
+  });
+}
