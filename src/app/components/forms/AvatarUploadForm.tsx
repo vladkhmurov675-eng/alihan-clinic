@@ -2,14 +2,11 @@
 
 import Cropper, { Area } from 'react-easy-crop';
 import { useState, useCallback } from 'react';
-import { uploadAndSaveAvatar} from '../../actions';
+import { uploadAvatar} from '../../actions';
 
 interface Props {
-  doctorId: number;
-  currentAvatar?: string | null;
   onUpload: (url: string) => void;
   onClose: () => void;
-  isAdmin?: boolean;
 }
 
 async function getCroppedImg(imgSrc: string, croppedAreaPixels: Area): Promise<Blob> {
@@ -42,7 +39,7 @@ async function getCroppedImg(imgSrc: string, croppedAreaPixels: Area): Promise<B
   });
 }
 
-export default function AvatarUploadForm({ doctorId, currentAvatar, onUpload, onClose, isAdmin }: Props) {
+export default function AvatarUploadForm({ onUpload, onClose }: Props) {
   const [file, setFile] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -68,7 +65,7 @@ export default function AvatarUploadForm({ doctorId, currentAvatar, onUpload, on
       const blob = await getCroppedImg(file, croppedArea);
       const formData = new FormData();
       formData.append('file', new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
-      const url = await uploadAndSaveAvatar(formData, isAdmin ? doctorId : undefined);
+      const url = await uploadAvatar(formData);
       onUpload(url);
       onClose();
     } catch (err) {
