@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react';
 import { uploadAvatar} from '../../actions';
 
 interface Props {
+  doctorId: number;
   onUpload: (url: string) => void;
   onClose: () => void;
 }
@@ -39,7 +40,7 @@ async function getCroppedImg(imgSrc: string, croppedAreaPixels: Area): Promise<B
   });
 }
 
-export default function AvatarUploadForm({ onUpload, onClose }: Props) {
+export default function AvatarUploadForm({ onUpload, onClose, doctorId }: Props) {
   const [file, setFile] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -65,6 +66,7 @@ export default function AvatarUploadForm({ onUpload, onClose }: Props) {
       const blob = await getCroppedImg(file, croppedArea);
       const formData = new FormData();
       formData.append('file', new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
+      formData.append('doctorId', doctorId.toString());
       const url = await uploadAvatar(formData);
       onUpload(url);
       onClose();

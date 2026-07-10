@@ -30,7 +30,6 @@ import { Doctor, Appointment, WhatsAppLog, DoctorFormData } from "./types";
 import DoctorForm from "./forms/DoctorForm";
 import SearchBar from "./SearchBar";
 import AppointmentList from "./AppointmentList";
-import CalendarPickerInput from "./calendars/CalendarPickerInput";
 
 
 export default function DoctorDashboard() {
@@ -65,6 +64,7 @@ export default function DoctorDashboard() {
   const [showFilter, setShowFilter] = useState(false); // Settings form state
   const [settingsForm, setSettingsForm] = useState<DoctorFormData>({
     name: "",
+    avatar: "",
     phone: "",
     specialization: "",
     slotDuration: 30,
@@ -177,6 +177,7 @@ export default function DoctorDashboard() {
         setSettingsForm({
           name: doc.name,
           phone: doc.phone,
+          avatar: doc.avatar,
           specialization: doc.specialization,
           slotDuration: doc.slotDuration,
           workStartTime: doc.workStartTime,
@@ -254,7 +255,7 @@ export default function DoctorDashboard() {
   router.push(`${pathname}?${params.toString()}`, { scroll: false });
 };
 
-  const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveSettings = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSavingSettings(true);
     setSettingsMsg("");
@@ -262,6 +263,7 @@ export default function DoctorDashboard() {
       await updateDoctorSettings({
         name: settingsForm.name,
         phone: settingsForm.phone,
+        avatar: settingsForm.avatar,
         specialization: settingsForm.specialization,
         slotDuration: settingsForm.slotDuration,
         workStartTime: settingsForm.workStartTime,
@@ -536,9 +538,10 @@ export default function DoctorDashboard() {
                 }}
               >
                 {range !== "range" && (
-                  <CalendarPickerInput
+                  <input
+                    type = "date"
                     value={date}
-                    onChange={(v) => setFilter("date", v)}
+                    onChange={(v) => setFilter("date", v.target.value)}
                   />
                 )}
 

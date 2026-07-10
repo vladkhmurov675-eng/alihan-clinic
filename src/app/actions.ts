@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 import { sendWhatsAppMessage } from "@/app/lib/whatsapp";
 import { uploadFile } from "@/app/lib/r2";
 import * as crypto from "crypto";
-import { Appointment, Procedure, Doctor } from "./components/types";
+import { Appointment, Procedure, Doctor, DoctorFormData } from "./components/types";
 // ─────────────────────────────────────────
 // SESSION HELPERS
 // ─────────────────────────────────────────
@@ -298,6 +298,7 @@ export async function getDoctorById(id: number) {
 export async function createDoctor(data: {
   name: string;
   phone: string;
+  avatar: string | null;
   specialization: string;
   slotDuration: number;
   workStartTime: string;
@@ -312,15 +313,28 @@ export async function createDoctor(data: {
   if (!(await isAdminLoggedIn())) throw new Error("Access denied");
   const hashed = await bcrypt.hash(data.password, 10);
   const newDoc = await prisma.doctor.create({
-    data: { ...data, password: hashed, avatar: "/images/default-doctor.png" },
+    data: { ...data, password: hashed, avatar: data.avatar || "/images/default-doctor.png" },
   });
   return { success: true, doctor: newDoc };
 }
 
 export async function updateDoctorByAdmin(
   id: number,
-  data: Record<string, any>,
-) {
+  data: {
+  name: string;
+  phone: string;
+  specialization: string;
+  slotDuration: number;
+  workStartTime: string;
+  workEndTime: string;
+  weekends: string;
+  disabledDates: string;
+  password: string;
+  education?: string | null;
+  experienceYears?: number | null;
+  description?: string | null;
+  avatar?: string;
+}) {
   if (!(await isAdminLoggedIn())) throw new Error("Access denied");
   // Hash password if it's being updated and isn't already hashed
   if (data.password && !data.password.startsWith("$2")) {
@@ -341,6 +355,7 @@ export async function deleteDoctor(id: number) {
 export async function updateDoctorSettings(data: {
   name: string;
   phone: string;
+  avatar: string;
   specialization: string;
   slotDuration: number;
   workStartTime: string;
@@ -836,8 +851,7 @@ export async function uploadAvatar(
 
   const file = formData.get("file") as File;
   if (!file) throw new Error("No file provided");
-
   const url = await uploadFile(file);
 
   return url;
-}
+    }

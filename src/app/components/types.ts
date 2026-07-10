@@ -15,9 +15,9 @@ interface Procedure {
 interface Appointment {
   id: number; doctorId: number; patientName: string; patientPhone: string;
   complaint: string; date: string; time: string; filePath: string | null;
-  status: string; price: number | null; procedureId: number | null; createdAt: Date;
+  status: string; price: number; procedureId: number; createdAt: Date;
   doctor: Doctor;
-  procedure: Procedure | null;
+  procedure: Procedure;
 };
 
 interface Setting {
@@ -41,14 +41,14 @@ interface Review {
 }
 
 
-type DoctorFormData = Omit<Doctor, 'id' | 'createdAt' | 'avatar'> & {
+type DoctorFormData = Omit<Doctor, 'id' | 'createdAt'> & {
   password?: string;
 };
 
 type ProcedureFormData = Pick<Procedure, 'name' | 'doctorId' | 'duration' | 'price'>;
 
-type AppointmentFormData = Omit<Appointment, 'id' | 'createdAt' | 'doctor' | 'procedure'> & {
-  procedureId: number | null;
+type AppointmentFormData = Omit<Appointment, 'id' | 'createdAt' | 'doctor'> & {
+  procedureId: number ;
   filePath: string;
 };
 

@@ -98,12 +98,13 @@ export default function DoctorForm({
             <div className="input-group" style = {{gridColumn: '1 / -1'}}>
               <label className="input-label">Опыт (лет)</label>
               <input
-                type="number"
-                className="form-control"
-                style={{ width: '100%' }}
-                value={form.experienceYears ?? 0}
-                onChange={e => set('experienceYears', Number(e.target.value))}
-              />
+                  type="number"
+                  min={0}
+                  className="form-control"
+                  style={{ width: '100%' }}
+                  value={form.experienceYears ?? 0}
+                  onChange={e => set('experienceYears', Math.max(0, Number(e.target.value) || 0))}
+                  />
             </div>
 
             <div className="input-group" style={{ gridColumn: '1 / -1' }}>
@@ -135,6 +136,7 @@ export default function DoctorForm({
               <label className="input-label">Начало работы</label>
               <input
                 type="time"
+                lang="ru-RU"
                 className="form-control"
                 style={{ width: '100%' }}
                 value={form.workStartTime}
@@ -146,6 +148,7 @@ export default function DoctorForm({
               <label className="input-label">Конец работы</label>
               <input
                 type="time"
+                lang="ru-RU"
                 className="form-control"
                 style={{ width: '100%' }}
                 value={form.workEndTime}
@@ -230,9 +233,7 @@ export default function DoctorForm({
 
               {showAvatarForm && (
                 <AvatarUploadForm
-                  isAdmin={isAdmin}
                   doctorId={doctorId}
-                  currentAvatar={currentAvatar}
                   onUpload={(newUrl: string) => {
                     onAvatarUpdate?.(newUrl);
                     showToast('Аватар обновлён', 'success');

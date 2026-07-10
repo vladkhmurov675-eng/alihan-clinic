@@ -1,7 +1,6 @@
 "use client";
 
-import { startPPRNavigation } from "next/dist/client/components/router-reducer/ppr-navigations";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 interface Props {
   value: string;
@@ -9,7 +8,6 @@ interface Props {
 }
 
 const currentDecade = Array.from({ length: 10 }, (_, i) => 2020 + i);
-
 
 const MONTHS = [
   "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
@@ -24,7 +22,6 @@ function calendarDateToStr(y: number, m: number, d: number) {
   return `${y}-${pad(m + 1)}-${pad(d)}`;
 }
 
-
 function datesInRange(a: string, b: string): string[] {
   const start = new Date(Math.min(+new Date(a), +new Date(b)));
   const end = new Date(Math.max(+new Date(a), +new Date(b)));
@@ -37,25 +34,24 @@ function datesInRange(a: string, b: string): string[] {
   return out;
 }
 
-  function groupDisabledDates (dates: Set<string>)  {
-    const oneDay = 24 * 60 * 60 * 1000;
-    const d = Array.from(dates).map(dates => new Date(dates))
+function groupDisabledDates(dates: Set<string>) {
+  const oneDay = 24 * 60 * 60 * 1000;
+  const d = Array.from(dates).map((dates) => new Date(dates));
 
-    
-    type periodsAndDays = {
-        periods: Array<{start: Date; end: Date}>;
-        days: Date[]
-    }
-    const disabledDates: periodsAndDays = {
-        periods: [],
-        days: []
-    };
+  type periodsAndDays = {
+    periods: Array<{ start: Date; end: Date }>;
+    days: Date[];
+  };
+  const disabledDates: periodsAndDays = {
+    periods: [],
+    days: [],
+  };
 
-    if(d.length === 0) return disabledDates;
-    let start = d[0];
-    let previous = d[0];
+  if (d.length === 0) return disabledDates;
+  let start = d[0];
+  let previous = d[0];
 
-    const flush = () => {
+  const flush = () => {
     if (start.getTime() === previous.getTime()) {
       disabledDates.days.push(start);
     } else {
@@ -76,27 +72,27 @@ function datesInRange(a: string, b: string): string[] {
     }
   }
 
-    flush();
-    console.log(disabledDates.days[0]);
-    return disabledDates;
-    }
-
-
-
+  flush();
+  return disabledDates;
+}
 
 export default function DisabledDatesPicker({ value, onChange }: Props) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
   const [step, setStep] = useState<"year" | "month">("year");
-  const [mode, setMode] = useState<"single" | "period">("single");
-  const [rangeStart, setRangeStart] = useState<string | null>(null);
-  const [hoverDay, setHoverDay] = useState<string | null>(null);
-  const [isDeleteMode, setDeleteMode] = useState(false);
-  const [decade, setDecade] = useState<number[]>(currentDecade); 
+  const [decade, setDecade] = useState<number[]>(currentDecade);
+
+  // Drag-select state: anchor is the day mousedown started on, mode is
+  // decided right then (remove if that day was already disabled, add
+  // otherwise), cursor tracks the day currently under the pointer.
+  const [dragAnchor, setDragAnchor] = useState<string | null>(null);
+  const [dragCursor, setDragCursor] = useState<string | null>(null);
+  const [dragMode, setDragMode] = useState<"add" | "remove" | null>(null);
+
   const disabled = new Set(value ? value.split(",").filter(Boolean) : []);
   const groupedDates = groupDisabledDates(disabled);
-  
+
   const commit = useCallback(
     (set: Set<string>) => {
       onChange([...set].sort().join(","));
@@ -104,67 +100,67 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
     [onChange],
   );
 
-  const handleClick = (ds: string) => {
-    if (mode === "single") {
-      const next = new Set(disabled);
-
-      if (isDeleteMode) {
-        next.delete(ds);
-      } else {
-        if (next.has(ds)) next.delete(ds);
-        else next.add(ds);
-      }
-
-      commit(next);
-      return;
-    }
-
-    // Period mode
-    if (!rangeStart) {
-      setRangeStart(ds);
-      setHoverDay(ds);
-      return;
-    }
-
-    const next = new Set(disabled);
-
-    if (isDeleteMode) {
-      datesInRange(rangeStart, ds).forEach((d) => next.delete(d));
-      setDeleteMode(false);
-    } else {
-      datesInRange(rangeStart, ds).forEach((d) => next.add(d));
-    }
-
-    commit(next);
-    setRangeStart(null);
-    setHoverDay(null);
+  const handleMouseDown = (ds: string) => {
+    setDragAnchor(ds);
+    setDragCursor(ds);
+    setDragMode(disabled.has(ds) ? "remove" : "add");
   };
+
+  const handleMouseEnter = (ds: string) => {
+    if (dragAnchor) setDragCursor(ds);
+  };
+
+  // Finalize on mouseup anywhere on the page — not just inside the grid —
+  // so a drag that ends outside the calendar (or the window) still commits.
+  useEffect(() => {
+    if (!dragAnchor) return;
+
+    const finish = () => {
+      const end = dragCursor ?? dragAnchor;
+      const range = datesInRange(dragAnchor, end);
+      const next = new Set(disabled);
+      if (dragMode === "remove") {
+        range.forEach((d) => next.delete(d));
+      } else {
+        range.forEach((d) => next.add(d));
+      }
+      commit(next);
+      setDragAnchor(null);
+      setDragCursor(null);
+      setDragMode(null);
+    };
+
+    window.addEventListener("mouseup", finish);
+    return () => window.removeEventListener("mouseup", finish);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragAnchor, dragCursor, dragMode]);
 
   const removeDate = (d: Date) => {
     const day = d.toISOString().split("T")[0];
     disabled.delete(day);
     commit(disabled);
   };
- const removeRange = (start: Date, end: Date) => {
+  const removeRange = (start: Date, end: Date) => {
     const splitStart = start.toISOString().split("T");
     const splitEnd = end.toISOString().split("T");
     let isInRange: boolean = false;
-  outer:
-   for (const date of disabled.values()){
-      if(isInRange){
+    outer: for (const date of disabled.values()) {
+      if (isInRange) {
         disabled.delete(date);
       }
-      switch (date){ 
-          case(splitStart[0]):  isInRange = true;
-            disabled.delete(date);
-            break; 
-          case(splitEnd[0]):   isInRange = false;
-            disabled.delete(date);
-            break outer; 
+      switch (date) {
+        case splitStart[0]:
+          isInRange = true;
+          disabled.delete(date);
+          break;
+        case splitEnd[0]:
+          isInRange = false;
+          disabled.delete(date);
+          break outer;
       }
     }
     commit(disabled);
-  }
+  };
   const prevMonth = () => {
     if (month === 0) {
       setMonth(11);
@@ -182,45 +178,15 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
   const totalDays = new Date(year, month + 1, 0).getDate();
 
   const previewDates = new Set<string>();
-  if (mode === "period" && rangeStart && hoverDay) {
-    datesInRange(rangeStart, hoverDay).forEach((d) => previewDates.add(d));
+  if (dragAnchor && dragCursor) {
+    datesInRange(dragAnchor, dragCursor).forEach((d) => previewDates.add(d));
   }
 
-  const sorted = [...disabled].sort();
-
   return (
-    <div className="form-container" style={{ maxWidth: 320 }}>
-      {/* Mode toggle */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-        {(["single", "period"] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => {
-              setMode(m);
-              setRangeStart(null);
-              setHoverDay(null);
-            }}
-            style={{
-              flex: 1,
-              padding: "5px 8px",
-              border: "1px solid",
-              borderColor:
-                mode === m ? "var(--color-primary)" : "var(--border-color)",
-              borderRadius: 7,
-              background: mode === m ? "rgba(45,106,45,0.1)" : "transparent",
-              color: mode === m ? "var(--color-primary)" : "var(--text-muted)",
-              cursor: "pointer",
-              fontSize: 12,
-              fontWeight: mode === m ? 600 : 400,
-              transition: "all 0.15s",
-            }}
-          >
-            {m === "single" ? "📅 Один день" : "📆 Период"}
-          </button>
-        ))}
-      </div>
-
+    <div
+      className="form-container"
+      style={{ maxWidth: 320, userSelect: "none" }}
+    >
       {/* Year grid */}
       {step === "year" && (
         <>
@@ -340,50 +306,49 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
             {Array.from({ length: totalDays }, (_, i) => i + 1).map((d) => {
               const ds = calendarDateToStr(year, month, d);
               const isDisabled = disabled.has(ds);
-              const isStart = mode === "period" && rangeStart === ds;
-              const isPreview =
-                mode === "period" && previewDates.has(ds) && ds !== rangeStart;
-              const isEnd = isPreview && ds === hoverDay;
+              const inPreview = dragAnchor !== null && previewDates.has(ds);
+              const previewAdding = inPreview && dragMode === "add";
+              const previewRemoving = inPreview && dragMode === "remove";
 
               let bg = "transparent";
               let color = "var(--text-primary)";
               let fw: number | string = 400;
-              const borderRadius = "5px";
+              let border = "none";
 
-              if (isDisabled && !isStart && !isEnd) {
+              if (isDisabled && !inPreview) {
                 bg = "rgba(220,38,38,0.15)";
                 color = "#b91c1c";
                 fw = 600;
               }
-              if (isStart) {
+              if (previewAdding) {
                 bg = "var(--color-primary)";
                 color = "#fff";
                 fw = 700;
-              } else if (isEnd) {
-                bg = "var(--color-primary)";
+              } else if (previewRemoving) {
+                bg = "rgba(220,38,38,0.35)";
                 color = "#fff";
                 fw = 700;
-              } else if (isPreview) {
-                bg = "rgba(45,106,45,0.12)";
-                color = "var(--color-primary)";
+                border = "1px dashed #b91c1c";
               }
 
               return (
                 <div
                   key={ds}
-                  onClick={() => handleClick(ds)}
-                  onMouseEnter={() =>
-                    mode === "period" && rangeStart && setHoverDay(ds)
-                  }
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleMouseDown(ds);
+                  }}
+                  onMouseEnter={() => handleMouseEnter(ds)}
                   style={{
                     textAlign: "center",
                     fontSize: 12,
                     padding: "5px 2px",
-                    borderRadius,
+                    borderRadius: "5px",
                     cursor: "pointer",
                     background: bg,
                     color,
                     fontWeight: fw,
+                    border,
                     transition: "background 0.1s",
                     userSelect: "none",
                   }}
@@ -394,47 +359,18 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
             })}
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              alignItems: "flex-start",
-              marginTop: 10,
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setDeleteMode((v) => !v)}
-              style={{
-                padding: "8px 12px",
-                border: "1px solid var(--border-color)",
-                borderRadius: 6,
-                cursor: "pointer",
-                background: isDeleteMode
-                  ? "rgba(220,38,38,0.1)"
-                  : "transparent",
-                color: isDeleteMode ? "#b91c1c" : "var(--text-primary)",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {isDeleteMode ? "🗑 Удаление" : "✏️ Редактирование"}
-            </button>
-          </div>
           {/* Hint */}
           <p
             style={{
               fontSize: 14,
               color: "var(--text-muted)",
-              marginTop: 6,
+              marginTop: 10,
               lineHeight: 1.4,
             }}
           >
-            {mode === "single"
-              ? "Нажмите на день чтобы добавить/убрать."
-              : rangeStart
-                ? "Выберите конечный день периода."
-                : "Выберите начальный день периода."}
+            Клик — добавить или убрать день. Зажмите и проведите мышью по
+            дням, чтобы выбрать период — если начать с уже отмеченного дня,
+            период снимается.
           </p>
         </>
       )}
@@ -486,7 +422,10 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
           ))}
         </>
       )}
-      <div>Нажмите "Сохранить настройки", чтобы сохранить изменения в календаре и профиле</div>
+      <div>
+        Нажмите &quot;Сохранить настройки&quot;, чтобы сохранить изменения в
+        календаре и профиле
+      </div>
     </div>
   );
 }

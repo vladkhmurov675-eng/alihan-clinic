@@ -25,7 +25,7 @@ import WhatsAppLogs from './WhatsAppLogs';
 import {Doctor, Procedure, Appointment, DoctorFormData, AppointmentFormData, ProcedureFormData} from './types';
 import SearchBar from './SearchBar';
 const BLANK_DOCTOR: DoctorFormData = {
-  name: '', phone: '', specialization: '',
+  name: '', phone: '', specialization: '', avatar: '/images/default-doctor.png',
   slotDuration: 30, workStartTime: '07:00', workEndTime: '11:00',
   weekends: '6,0', disabledDates: '', education: '', password: '', experienceYears: 0, description: '',
 };
@@ -89,7 +89,7 @@ export default function AdminDashboard({
   const openEditDoctor = (doc: Doctor) => {
     setEditingDoctor(doc);
     setDoctorForm({
-      name: doc.name, phone: doc.phone, specialization: doc.specialization,
+      name: doc.name, phone: doc.phone, specialization: doc.specialization, avatar: doc.avatar,
       slotDuration: doc.slotDuration, workStartTime: doc.workStartTime,
       workEndTime: doc.workEndTime, weekends: doc.weekends,
       disabledDates: doc.disabledDates, password: '',
@@ -174,7 +174,7 @@ export default function AdminDashboard({
     setAppointmentForm({
       patientName: appt.patientName, patientPhone: appt.patientPhone,
       date: appt.date, time: appt.time, status: appt.status,
-      doctorId: appt.doctorId, procedureId: appt.procedureId,
+      doctorId: appt.doctorId, procedureId: appt.procedureId, procedure: appt.procedure,
       complaint: appt.complaint, price: appt.price, filePath: appt.filePath ?? '',
     });
     setShowAppointmentForm(true);
@@ -294,7 +294,7 @@ export default function AdminDashboard({
               onSelect={doc => {
                 openEditDoctor(doc);
               }}
-              renderItem={(doc, active) => (
+              renderItem={(doc) => (
                 <div style={{ padding: '0.6rem 1rem', display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{doc.name}</span>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{doc.specialization} · {doc.phone}</span>
@@ -394,10 +394,11 @@ export default function AdminDashboard({
                 doctorId={editingDoctor?.id}
                 currentAvatar={editingDoctor?.avatar}
                 onAvatarUpdate={(url) => {
-                  if (editingDoctor) {
+                  if (editingDoctor) {  
                     setDoctors(prev =>
                       prev.map(d => d.id === editingDoctor.id ? { ...d, avatar: url } : d)
                     );
+                    setEditingDoctor(prev => prev ? { ...prev, avatar: url } : prev);
                   }
                 }}
               />

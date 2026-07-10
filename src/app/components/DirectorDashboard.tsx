@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { getDirectorStats } from '../actions';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -100,38 +100,6 @@ export default function DirectorDashboard({
   const [to, setTo] = useState(initialTo);
   const [loading, setLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
-
-  async function exportPDF() {
-    setPdfLoading(true);
-    try {
-      const { pdf } = await import('@react-pdf/renderer');
-      const { DirectorPDFDocument } = await import('./DirectorPDFReport');
-      const blob = await pdf(
-        <DirectorPDFDocument
-          from={from}
-          to={to}
-          stats={stats}
-          byDoctor={byDoctor}
-          byProcedure={byProcedure}
-          byStatus={byStatus}
-          appointments={tableFiltered}
-        />
-      ).toBlob();
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `отчет_клиники_${from}_${to}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('PDF export error:', err);
-    } finally {
-      setPdfLoading(false);
-    }
-  }
 
   // Filters
   const [searchMode, setSearchMode] = useState<
@@ -262,6 +230,55 @@ export default function DirectorDashboard({
     { name: 'Завершён', value: appointments.filter(a => a.status === 'COMPLETED').length, color: '#2d6a2d' },
     { name: 'Отменён', value: appointments.filter(a => a.status === 'CANCELLED').length, color: '#dc2626' },
   ].filter(s => s.value > 0), [appointments]);
+
+  // ── Dedupe by whatever the current search mode is keyed on ──
+const searchItems = useMemo(() => {
+  const seen = new Set<string>();
+  const result: Appointment[] = [];
+  for (const a of appointments) {
+    const key =
+      searchMode === 'doctor' ? String(a.doctor.id) :
+      searchMode === 'patient' ? a.patientPhone :
+      a.procedure ? String(a.procedure.id) : '__none__';
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(a);
+  }
+  return result;
+}, [appointments, searchMode]);
+
+  const exportPDF = useCallback(async() => {
+    setPdfLoading(true);
+    try {
+      const { pdf } = await import('@react-pdf/renderer');
+      const { DirectorPDFDocument } = await import('./DirectorPDFReport');
+      const blob = await pdf(
+        <DirectorPDFDocument
+          from={from}
+          to={to}
+          stats={stats}
+          byDoctor={byDoctor}
+          byProcedure={byProcedure}
+          byStatus={byStatus}
+          appointments={tableFiltered}
+        />
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `отчет_клиники_${from}_${to}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('PDF export error:', err);
+    } finally {
+      setPdfLoading(false);
+    }
+  }, [from, to, stats, byDoctor, byProcedure, byStatus, tableFiltered]);
+
 
   // ── Render ─────────────────────────────────────────────────
   return (
@@ -519,7 +536,7 @@ export default function DirectorDashboard({
   {/* Your existing SearchBar */}
   <div style={{ position: 'relative', width: '220px', zIndex: 5 }}>
     <SearchBar<Appointment>
-      items={appointments}
+      items={searchItems}
       placeholder={
         searchMode === 'doctor'
           ? 'Поиск врача...'
