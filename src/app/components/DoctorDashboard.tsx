@@ -538,7 +538,7 @@ export default function DoctorDashboard() {
                 }}
               >
                 {range !== "range" && (
-                  <input
+                  <input className = 'form-control'
                     type = "date"
                     value={date}
                     onChange={(v) => setFilter("date", v.target.value)}

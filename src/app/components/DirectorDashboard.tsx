@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { getDirectorStats } from '../actions';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
-import { TrendingUp, Users, Calendar, DollarSign, Filter, RefreshCw, X, Download, FileText } from 'lucide-react';
+import { TrendingUp, Users, Calendar, DollarSign, Filter, RefreshCw, Download,  } from 'lucide-react';
 import { Appointment, Doctor, Procedure } from './types';
 import SearchBar from './SearchBar';
 
@@ -32,6 +32,18 @@ function fmtShort(n: number) {
   return n + ' ₸';
 }
 
+// ── Responsive helper ──────────────────────────────────────────
+function useIsMobile(breakpoint = 640) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < breakpoint);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 // Custom tooltip
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
@@ -40,6 +52,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
       background: '#fff', border: '1px solid var(--border-color)',
       borderRadius: 8, padding: '0.6rem 1rem',
       boxShadow: 'var(--shadow-md)', fontSize: '0.85rem',
+      maxWidth: 220, wordBreak: 'break-word',
     }}>
       <p style={{ fontWeight: 700, marginBottom: 4 }}>{label}</p>
       {payload.map((p) => (
@@ -58,8 +71,9 @@ function DoctorBarTooltip({ active, payload }: { active?: boolean; payload?: any
   return (
     <div style={{
       background: '#fff', border: '1px solid var(--border-color)',
-      borderRadius: 8, padding: '0.6rem 1rem',
-      boxShadow: 'var(--shadow-md)', fontSize: '0.85rem',
+      borderRadius: 8, padding: '0.6rem 0.9rem',
+      boxShadow: 'var(--shadow-md)', fontSize: '0.8rem',
+      maxWidth: 200, wordBreak: 'break-word',
     }}>
       <p style={{ fontWeight: 700, marginBottom: 4 }}>{data.name}</p>
       {data.specialization && <p>Специализация: {data.specialization}</p>}
@@ -95,6 +109,8 @@ export default function DirectorDashboard({
   initialFrom: string;
   initialTo: string;
 }) {
+  const isMobile = useIsMobile();
+
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
   const [from, setFrom] = useState(initialFrom);
   const [to, setTo] = useState(initialTo);
@@ -287,7 +303,7 @@ const searchItems = useMemo(() => {
       {/* ── Header ── */}
       <div style={{
         background: 'linear-gradient(135deg, var(--color-primary), #1a4a1a)',
-        padding: '2.5rem 1.5rem', color: '#fff',
+        padding: isMobile ? '1.75rem 1.25rem' : '2.5rem 1.5rem', color: '#fff',
       }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{
@@ -296,17 +312,21 @@ const searchItems = useMemo(() => {
             fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em',
             textTransform: 'uppercase', marginBottom: '0.75rem',
           }}>Кабинет руководителя</div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', margin: 0 }}>
+          <h1 style={{ fontSize: isMobile ? '1.4rem' : '1.8rem', fontWeight: 800, color: '#fff', margin: 0 }}>
             Аналитика клиники
           </h1>
         </div>
       </div>
 
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem 1.5rem 4rem' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '1.5rem 1rem 3rem' : '2rem 1.5rem 4rem' }}>
 
         {/* ── Date range controls ── */}
         <div className="card" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+          <div style={{
+            display: 'flex', flexWrap: 'wrap', gap: '0.75rem',
+            alignItems: isMobile ? 'stretch' : 'center',
+            flexDirection: isMobile ? 'column' : 'row',
+          }}>
 
             {/* Presets */}
             <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -324,14 +344,17 @@ const searchItems = useMemo(() => {
               ))}
             </div>
             {/* Custom range */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <input type="date" className="form-control" style={{ width: 'auto', padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap',
+              width: isMobile ? '100%' : 'auto',
+            }}>
+              <input type="date" className="form-control" style={{ width: isMobile ? 0 : 'auto', flex: isMobile ? 1 : undefined, padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
                 value={from} max={to} onChange={e => setFrom(e.target.value)} />
               <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>—</span>
-              <input type="date" className="form-control" style={{ width: 'auto', padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
+              <input type="date" className="form-control" style={{ width: isMobile ? 0 : 'auto', flex: isMobile ? 1 : undefined, padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
                 value={to} min={from} onChange={e => setTo(e.target.value)} />
               <button onClick={applyCustomRange} className="btn btn-primary"
-                style={{ padding: '0.4rem 1rem', fontSize: '0.82rem', gap: '0.3rem' }}
+                style={{ padding: '0.4rem 1rem', fontSize: '0.82rem', gap: '0.3rem', width: isMobile ? '100%' : undefined, justifyContent: 'center' }}
                 disabled={loading}>
                 <RefreshCw size={13} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
                 {loading ? 'Загрузка...' : 'Применить'}
@@ -342,7 +365,12 @@ const searchItems = useMemo(() => {
             <button
               onClick={exportPDF}
               className="btn btn-accent"
-              style={{ padding: '0.4rem 1rem', fontSize: '0.82rem', gap: '0.4rem', marginLeft: 'auto' }}
+              style={{
+                padding: '0.4rem 1rem', fontSize: '0.82rem', gap: '0.4rem',
+                marginLeft: isMobile ? 0 : 'auto',
+                width: isMobile ? '100%' : undefined,
+                justifyContent: 'center',
+              }}
               disabled={pdfLoading}
             >
               {pdfLoading ? (
@@ -356,29 +384,33 @@ const searchItems = useMemo(() => {
         </div>
 
         {/* ── Stat cards ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: isMobile ? '0.75rem' : '1rem', marginBottom: '1.5rem',
+        }}>
           {[
             { icon: <Calendar size={22} />, label: 'Всего записей', value: stats.total, color: 'var(--color-primary)' },
             { icon: <DollarSign size={22} />, label: 'Выручка за период', value: fmt(stats.revenue), color: 'var(--color-accent)' },
             { icon: <TrendingUp size={22} />, label: 'Завершено приёмов', value: stats.completed, color: '#c8a96e' },
             { icon: <Users size={22} />, label: 'Средний чек', value: fmt(stats.avgRevenue), color: 'var(--color-primary)' },
           ].map(s => (
-            <div key={s.label} className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div key={s.label} className="card" style={{ padding: isMobile ? '1rem' : '1.25rem', display: 'flex', alignItems: 'center', gap: isMobile ? '0.75rem' : '1rem' }}>
               <div style={{
-                width: 48, height: 48, borderRadius: 12, flexShrink: 0,
+                width: isMobile ? 40 : 48, height: isMobile ? 40 : 48, borderRadius: 12, flexShrink: 0,
                 background: `${s.color}15`, color: s.color,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>{s.icon}</div>
-              <div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 3 }}>{s.label}</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: isMobile ? '1.1rem' : '1.4rem', fontWeight: 800, color: s.color, lineHeight: 1.15 }}>{s.value}</div>
+                <div style={{ fontSize: isMobile ? '0.72rem' : '0.78rem', color: 'var(--text-muted)', marginTop: 3 }}>{s.label}</div>
               </div>
             </div>
           ))}
         </div>
 
         {/* ── Revenue area chart ── */}
-        <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
+        <div className="card" style={{ padding: isMobile ? '1.1rem' : '1.5rem', marginBottom: '1.5rem' }}>
           <h3 style={{ fontSize: '1rem', marginBottom: '1.25rem', color: 'var(--color-primary)' }}>
             📈 Выручка по дням
           </h3>
@@ -387,7 +419,7 @@ const searchItems = useMemo(() => {
               Нет данных за выбранный период
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={240}>
+            <ResponsiveContainer width="100%" height={isMobile ? 200 : 240}>
               <AreaChart data={revenueByDate} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                 <defs>
                   <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
@@ -396,8 +428,8 @@ const searchItems = useMemo(() => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={d => d.slice(5)} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={fmtShort} width={60} />
+                <XAxis dataKey="date" tick={{ fontSize: isMobile ? 9 : 11 }} tickFormatter={d => d.slice(5)} interval={isMobile ? 'preserveStartEnd' : 0} />
+                <YAxis tick={{ fontSize: isMobile ? 9 : 11 }} tickFormatter={fmtShort} width={isMobile ? 46 : 60} />
                 <Tooltip content={<ChartTooltip />} />
                 <Area
                   type="monotone" dataKey="Выручка ₸"
@@ -413,28 +445,31 @@ const searchItems = useMemo(() => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
 
           {/* Bar: by doctor */}
-          <div className="card" style={{ padding: '1.5rem' }}>
+          <div className="card" style={{ padding: isMobile ? '1.1rem' : '1.5rem' }}>
             <h3 style={{ fontSize: '1rem', marginBottom: '1.25rem', color: 'var(--color-primary)' }}>
               👨‍⚕️ По врачам
             </h3>
             {byDoctor.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Нет данных</div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <div style={{ minWidth: byDoctor.length * 80, width: '100%' }}>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={byDoctor} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+              <div style={{ overflowX: isMobile && byDoctor.length <= 4 ? 'visible' : 'auto' }}>
+                <div style={{
+                  minWidth: isMobile && byDoctor.length <= 4 ? '100%' : byDoctor.length * 80,
+                  width: '100%',
+                }}>
+                  <ResponsiveContainer width="100%" height={isMobile ? 240 : 220}>
+                    <BarChart data={byDoctor} margin={{ top: 5, right: 10, left: 0, bottom: isMobile ? 45 : 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
                       <XAxis
                         dataKey="name"
-                        angle={0}
-                        textAnchor="middle"
+                        angle={isMobile ? -35 : 0}
+                        textAnchor={isMobile ? 'end' : 'middle'}
                         interval={0}
-                        tick={{ fontSize: 12 }}
-                        height={30}
+                        tick={{ fontSize: isMobile ? 10 : 12 }}
+                        height={isMobile ? 55 : 30}
                       />
-                      <YAxis yAxisId="left" orientation="left" tick={{ fontSize: 11 }} />
-                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} tickFormatter={fmtShort} width={60} />
+                      <YAxis yAxisId="left" orientation="left" tick={{ fontSize: 11 }} width={isMobile ? 28 : undefined} />
+                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} tickFormatter={fmtShort} width={isMobile ? 46 : 60} />
                       <Tooltip content={<DoctorBarTooltip />} />
                       <Legend wrapperStyle={{ fontSize: 11 }} verticalAlign="bottom" height={0} align="center" />
                       <Bar yAxisId="right" dataKey="revenue" fill="var(--color-primary)" radius={[4, 4, 0, 0]} height={10} />
@@ -447,41 +482,59 @@ const searchItems = useMemo(() => {
           </div>
 
           {/* Pie: by status */}
-          <div className="card" style={{ padding: '1.5rem' }}>
+          <div className="card" style={{ padding: isMobile ? '1.1rem' : '1.5rem' }}>
             <h3 style={{ fontSize: '1rem', marginBottom: '1.25rem', color: 'var(--color-primary)' }}>
               📊 По статусам
             </h3>
             {byStatus.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Нет данных</div>
             ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie data={byStatus} dataKey="value" nameKey="name"
-                    cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) =>
-                      `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
-                    } labelLine={true}>
-                    {byStatus.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
+              <>
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie data={byStatus} dataKey="value" nameKey="name"
+                      cx="50%" cy="50%" outerRadius={isMobile ? 70 : 80}
+                      label={isMobile ? false : ({ name, percent }) =>
+                        `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
+                      } labelLine={!isMobile}>
+                      {byStatus.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(v) => [v ?? 0, 'Записей']} />
+                  </PieChart>
+                </ResponsiveContainer>
+                {isMobile && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.75rem' }}>
+                    {byStatus.map(s => (
+                      <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                        <div style={{ width: 12, height: 12, borderRadius: 3, background: s.color, flexShrink: 0 }} />
+                        <span style={{ flex: 1, color: 'var(--text-secondary)' }}>{s.name}</span>
+                        <span style={{ fontWeight: 700 }}>{s.value}</span>
+                      </div>
                     ))}
-                  </Pie>
-                  <Tooltip formatter={(v) => [v ?? 0, 'Записей']} />
-                </PieChart>
-              </ResponsiveContainer>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
 
         {/* Pie: by procedure */}
         {byProcedure.length > 0 && (
-          <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
+          <div className="card" style={{ padding: isMobile ? '1.1rem' : '1.5rem', marginBottom: '1.5rem' }}>
             <h3 style={{ fontSize: '1rem', marginBottom: '1.25rem', color: 'var(--color-primary)' }}>
               💉 По процедурам
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', alignItems: 'center' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1rem', alignItems: 'center',
+            }}>
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
                   <Pie data={byProcedure} dataKey="value" nameKey="name"
-                    cx="50%" cy="50%" outerRadius={85} innerRadius={40}>
+                    cx="50%" cy="50%" outerRadius={isMobile ? 75 : 85} innerRadius={isMobile ? 35 : 40}>
                     {byProcedure.map((_, i) => (
                       <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                     ))}
@@ -504,18 +557,28 @@ const searchItems = useMemo(() => {
         )}
 
         {/* ── Appointments table with filters ── */}
-        <div className="card" style={{ padding: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div className="card" style={{ padding: isMobile ? '1.1rem' : '1.5rem' }}>
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem',
+          }}>
             <h3 style={{ fontSize: '1rem', color: 'var(--color-primary)', margin: 0 }}>
               📋 Записи ({appointments.length})
             </h3>
 
             {/* Filters */}
-            <div className="filter-bar" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="filter-bar" style={{
+              display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center',
+              width: isMobile ? '100%' : undefined,
+            }}>
               <Filter size={14} style={{ color: 'var(--text-muted)' }} />
 
               {/* Search */}
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <div style={{
+                display: 'flex', gap: '0.5rem', alignItems: 'center',
+                width: isMobile ? '100%' : undefined,
+                flexDirection: isMobile ? 'column' : 'row',
+              }}>
 
   {/* Mode selector */}
   <select
@@ -523,7 +586,7 @@ const searchItems = useMemo(() => {
     value={searchMode}
     onChange={(e) => setSearchMode(e.target.value as 'doctor' | 'patient' | 'procedure')}
     style={{
-      width: 140,
+      width: isMobile ? '100%' : 140,
       padding: '0.4rem 0.6rem',
       fontSize: '0.82rem'
     }}
@@ -534,7 +597,7 @@ const searchItems = useMemo(() => {
   </select>
 
   {/* Your existing SearchBar */}
-  <div style={{ position: 'relative', width: '220px', zIndex: 5 }}>
+  <div style={{ position: 'relative', width: isMobile ? '100%' : '220px', zIndex: 5 }}>
     <SearchBar<Appointment>
       items={searchItems}
       placeholder={
@@ -562,38 +625,11 @@ const searchItems = useMemo(() => {
         // IMPORTANT: no more filterDoctor logic
         // selection is optional now, not a filter lock
       }}
-      renderItem={(a) => (
-        <div style={{ padding: '0.5rem 0.75rem', display: 'flex', flexDirection: 'column' }}>
-          {searchMode === 'doctor' && (
-            <>
-              <span style={{ fontWeight: 600 }}>{a.doctor.name}</span>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                {a.doctor.specialization}
-              </span>
-            </>
-          )}
-
-          {searchMode === 'patient' && (
-            <>
-              <span style={{ fontWeight: 600 }}>{a.patientName}</span>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                {a.patientPhone}
-              </span>
-            </>
-          )}
-
-          {searchMode === 'procedure' && (
-            <span style={{ fontWeight: 600 }}>
-              {a.procedure?.name ?? 'Без процедуры'}
-            </span>
-          )}
-        </div>
-      )}
     />
   </div>
 </div>
 
-              <select className="form-control" style={{ width: 'auto', padding: '0.4rem 0.75rem', fontSize: '0.82rem' }}
+              <select className="form-control" style={{ width: isMobile ? '100%' : 'auto', padding: '0.4rem 0.75rem', fontSize: '0.82rem' }}
                 value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                 <option value="">Все статусы</option>
                 {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -601,7 +637,7 @@ const searchItems = useMemo(() => {
 
               {(filterProcedure || filterStatus || searchQuery) && (
                 <button className="btn btn-secondary"
-                  style={{ padding: '0.4rem 0.75rem', fontSize: '0.82rem' }}
+                  style={{ padding: '0.4rem 0.75rem', fontSize: '0.82rem', width: isMobile ? '100%' : undefined }}
                   onClick={() => { setSearchQuery(''); setFilterProcedure(''); setFilterStatus(''); }}>
                   Сбросить
                 </button>
@@ -610,6 +646,43 @@ const searchItems = useMemo(() => {
             {tableFiltered.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                 Нет записей по выбранным фильтрам
+              </div>
+            ) : isMobile ? (
+              /* ── Mobile: stacked cards instead of a table ── */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {tableFiltered.slice(0, 100).map(a => (
+                  <div key={a.id} style={{
+                    padding: '0.9rem', borderRadius: 10,
+                    border: '1px solid var(--border-color)',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700 }}>{a.patientName}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{a.patientPhone}</div>
+                      </div>
+                      <span className={`badge ${STATUS_BADGE[a.status]}`} style={{ flexShrink: 0 }}>
+                        {STATUS_LABELS[a.status]}
+                      </span>
+                    </div>
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      {a.date} · {a.time}
+                    </div>
+                    <div style={{ marginTop: '0.35rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      {a.doctor.name.split(' ').slice(0, 2).join(' ')}
+                      {a.procedure?.name && <> · {a.procedure.name}</>}
+                    </div>
+                    {a.price ? (
+                      <div style={{ marginTop: '0.4rem', fontWeight: 700, color: 'var(--color-primary)' }}>
+                        {fmt(a.price)}
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+                {tableFiltered.length > 100 && (
+                  <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    Показано первые 100 из {tableFiltered.length} записей. Сузьте фильтры для точного поиска.
+                  </p>
+                )}
               </div>
             ) : (
               <div className="table-scroll" style={{ overflowX: 'auto' }}>

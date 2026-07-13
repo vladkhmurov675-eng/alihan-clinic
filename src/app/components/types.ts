@@ -52,6 +52,8 @@ type AppointmentFormData = Omit<Appointment, 'id' | 'createdAt' | 'doctor'> & {
   filePath: string;
 };
 
+type ReviewFormData = Omit<Review, 'id' | 'date'> 
+
 interface DoctorWithRelations extends Doctor {
   procedures: Procedure[];
   appointments: Appointment[];
@@ -74,6 +76,7 @@ export type {
   DoctorFormData,
   ProcedureFormData,
   AppointmentFormData,
+  ReviewFormData,
   DoctorWithRelations,
   AppointmentWithRelations,
 };

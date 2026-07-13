@@ -12,6 +12,7 @@ import {
   deleteProcedure,
   updateAppointment,
   deleteAppointment,
+  sendSchedulesServer
 } from '../actions';
 import {
   LogOut, Users, Settings as SettingsIcon,
@@ -213,6 +214,13 @@ export default function AdminDashboard({
     finally { setSavingSettingsFlag(false); }
   };
 
+  const sendSchedules = async () => {
+    try {
+      await sendSchedulesServer();
+      showToast('Расписания отправлены');
+    } catch { showToast('Ошибка отправки расписаний', 'error'); }
+  };
+
   const TABS = [
     { key: 'doctors' as const, label: 'Врачи', icon: <Users size={16} /> },
     { key: 'procedures' as const, label: 'Услуги', icon: <HeartHandshake size={16} /> },
@@ -260,6 +268,8 @@ export default function AdminDashboard({
         </button>
       </div>
 
+      <button type = 'button' className = 'btn btn-primary' onClick = {() => sendSchedules()} style = {{marginBottom: '1rem'}}> Отправить расписания </button>
+      
       {/* Tabs */}
       <div className="tab-bar" style={{
         display: 'flex', gap: '0.25rem', marginBottom: '1.5rem',

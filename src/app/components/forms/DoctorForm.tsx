@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DisabledDatesPicker from '../calendars/DisabledDatesPicker';
 import { useToast } from '../../hooks/toast';
 import { DoctorFormData } from '../types';
@@ -20,6 +20,18 @@ interface Props {
   onAvatarUpdate?: (url: string) => void;
 }
 
+// ── Responsive helper ──────────────────────────────────────────
+function useIsMobile(breakpoint = 640) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < breakpoint);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 export default function DoctorForm({
   isAdmin,
   form,
@@ -30,6 +42,7 @@ export default function DoctorForm({
   currentAvatar,
   onAvatarUpdate,
 }: Props) {
+  const isMobile = useIsMobile();
   const { showToast, ToastComponent } = useToast();
   const [showAvatarForm, setShowAvatarForm] = useState(false);
 
@@ -41,16 +54,76 @@ export default function DoctorForm({
       {ToastComponent}
       <div className = 'form-container' style={{
         display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
-        gap: '1.5rem',
+        gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr',
+        gap: isMobile ? '1.25rem' : '1.5rem',
         alignItems: 'start',
       }}>
 
-        {/* ── Main form (left, fills remaining space) ── */}
-        <form onSubmit={onSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        {/* ── Avatar section (shown first on mobile, right column on desktop) ── */}
+        <div style={{
+          order: isMobile ? -1 : 1,
+          height: 'auto', width: '100%',
+          backgroundColor: 'white',
+          padding: 10,
+          border: '3px solid #e0e0e0',
+          borderRadius: 10,
+          flexShrink: 0,
+          float: isMobile ? 'none' : 'right',
+          boxSizing: 'border-box',
+        }}>
 
-            <div className="input-group" style={{ gridColumn: '1 / 2' }}>
+          <div style={{ width: '100%', height: 450, margin: 'auto' }}>
+          <DoctorAvatar
+            name={form.name || 'Н И'}
+            avatar={currentAvatar}
+            size={100}
+          />
+          </div>
+          {doctorId ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowAvatarForm(v => !v)}
+                className="btn btn-secondary"
+                style={{ display: 'block', width: '100%', marginTop: '0.75rem', fontSize: '0.85rem' }}
+              >
+                {showAvatarForm ? 'Скрыть' : 'Изменить фото'}
+              </button>
+
+              {showAvatarForm && (
+                <AvatarUploadForm
+                  doctorId={doctorId}
+                  onUpload={(newUrl: string) => {
+                    onAvatarUpdate?.(newUrl);
+                    showToast('Аватар обновлён', 'success');
+                    setShowAvatarForm(false);
+                  }}
+                  onClose={() => setShowAvatarForm(false)}
+                />
+              )}
+            </>
+          ) : (
+            <p style={{
+              fontSize: '0.78rem',
+              color: 'var(--text-muted)',
+              marginTop: '0.75rem',
+              textAlign: 'center',
+              lineHeight: 1.5,
+            }}>
+              Фото можно добавить после создания врача
+            </p>
+          )}
+        </div>
+
+        {/* ── Main form ── */}
+        <form onSubmit={onSubmit} style={{ order: isMobile ? 2 : 0 }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+            gap: isMobile ? '0.85rem' : '1rem',
+          }}>
+
+            <div className="input-group" style={{ gridColumn: isMobile ? undefined : '1 / 2' }}>
               <label className="input-label">ФИО</label>
               <input
                 className="form-control"
@@ -156,7 +229,7 @@ export default function DoctorForm({
               />
             </div>
 
-            <div className="input-group">
+            <div className="input-group" style={{ gridColumn: isMobile ? undefined : '1 / -1' }}>
               <label className="input-label">
                 Выходные дни (0=Вс, 1=Пн … 6=Сб, через запятую)
               </label>
@@ -169,7 +242,7 @@ export default function DoctorForm({
               />
             </div>
 
-            <div className="input-group">
+            <div className="input-group" style={{ gridColumn: '1 / -1' }}>
               <label className="input-label">Нерабочие дни (выберите в календаре)</label>
               <DisabledDatesPicker
                 value={form.disabledDates}
@@ -178,7 +251,7 @@ export default function DoctorForm({
             </div>
 
             {isAdmin && (
-              <div className="input-group">
+              <div className="input-group" style={{ gridColumn: isMobile ? undefined : '1 / -1' }}>
                 <label className="input-label">
                   Новый пароль (оставьте пустым, чтобы не менять)
                 </label>
@@ -199,62 +272,14 @@ export default function DoctorForm({
             type="submit"
             disabled={saving}
             className={`btn ${saving ? 'btn-disabled' : 'btn-primary'}`}
-            style={{ marginTop: '1.5rem', padding: '0.75rem 2rem' }}
+            style={{
+              marginTop: '1.5rem', padding: '0.75rem 2rem',
+              width: isMobile ? '100%' : undefined,
+            }}
           >
             {saving ? 'Сохранение...' : 'Сохранить настройки'}
           </button>
         </form>
-
-        {/* ── Avatar section (right, fixed width) ── */}
-        <div style={{ height: 'auto', width: '100%',
-                  backgroundColor: 'white',
-                  padding: 10,
-                  border: '3px solid #e0e0e0', 
-                  borderRadius: 10,
-                  flexShrink: 0, float: 'right'}}>
-          
-          <div style={{ width: '100%', height: 450, margin: 'auto' }}>
-          <DoctorAvatar
-            name={form.name || 'Н И'}
-            avatar={currentAvatar}
-            size={100}
-          />
-          </div>
-          {doctorId ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setShowAvatarForm(v => !v)}
-                className="btn btn-secondary"
-                style={{ display: 'block', width: '100%', marginTop: '0.75rem', fontSize: '0.85rem' }}
-              >
-                {showAvatarForm ? 'Скрыть' : 'Изменить фото'}
-              </button>
-
-              {showAvatarForm && (
-                <AvatarUploadForm
-                  doctorId={doctorId}
-                  onUpload={(newUrl: string) => {
-                    onAvatarUpdate?.(newUrl);
-                    showToast('Аватар обновлён', 'success');
-                    setShowAvatarForm(false);
-                  }}
-                  onClose={() => setShowAvatarForm(false)}
-                />
-              )}
-            </>
-          ) : (
-            <p style={{
-              fontSize: '0.78rem',
-              color: 'var(--text-muted)',
-              marginTop: '0.75rem',
-              textAlign: 'center',
-              lineHeight: 1.5,
-            }}>
-              Фото можно добавить после создания врача
-            </p>
-          )}
-        </div>
 
       </div>
     </>

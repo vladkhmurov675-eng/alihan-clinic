@@ -137,29 +137,31 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
 
   const removeDate = (d: Date) => {
     const day = d.toISOString().split("T")[0];
-    disabled.delete(day);
-    commit(disabled);
+    const next = new Set(disabled);
+    next.delete(day);
+    commit(next);
   };
   const removeRange = (start: Date, end: Date) => {
     const splitStart = start.toISOString().split("T");
     const splitEnd = end.toISOString().split("T");
+    const next = new Set(disabled);
     let isInRange: boolean = false;
-    outer: for (const date of disabled.values()) {
+    outer: for (const date of next.values()) {
       if (isInRange) {
-        disabled.delete(date);
+        next.delete(date);
       }
       switch (date) {
         case splitStart[0]:
           isInRange = true;
-          disabled.delete(date);
+          next.delete(date);
           break;
         case splitEnd[0]:
           isInRange = false;
-          disabled.delete(date);
+          next.delete(date);
           break outer;
       }
     }
-    commit(disabled);
+    commit(next);
   };
   const prevMonth = () => {
     if (month === 0) {
@@ -211,7 +213,7 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
                 width: "inherit",
                 marginBottom: 8,
                 border: "1px solid var(--border-color)",
-                borderRadius: 7,
+                borderRadius: 0,
                 padding: 6,
               }}
             >
@@ -268,6 +270,9 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
                 fontWeight: 600,
                 fontSize: 13,
                 color: "var(--text-primary)",
+                justifyContent: "center",
+                borderRadius: 2,
+                padding: 6,
                 cursor: "pointer",
               }}
             >
@@ -343,7 +348,6 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
                     textAlign: "center",
                     fontSize: 12,
                     padding: "5px 2px",
-                    borderRadius: "5px",
                     cursor: "pointer",
                     background: bg,
                     color,

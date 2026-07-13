@@ -3,10 +3,10 @@ import "server-only";
 import bcrypt from "bcrypt";
 import { prisma } from "../db";
 import { cookies } from "next/headers";
-import { sendWhatsAppMessage } from "@/app/lib/whatsapp";
+import { sendWhatsAppMessage, sendTomorrowSchedules } from "@/app/lib/whatsapp";
 import { uploadFile } from "@/app/lib/r2";
 import * as crypto from "crypto";
-import { Appointment, Procedure, Doctor, DoctorFormData } from "./components/types";
+import { Appointment } from "./components/types";
 // ─────────────────────────────────────────
 // SESSION HELPERS
 // ─────────────────────────────────────────
@@ -580,6 +580,10 @@ export async function sendWhatsAppNotification(appointment: {
   await sendWhatsAppMessage(appointment.patientPhone, message);
 }
 
+export async function sendSchedulesServer() {
+  return await sendTomorrowSchedules();
+}
+
 export async function getDoctorAppointments(filters?: {
   status?: string;
   date?: string;
@@ -786,63 +790,7 @@ export async function getAllAppointmentsForAdmin() {
 export async function getAllReviews() {
   return prisma.review.findMany();
 }
-
-export async function createReview(data: {
-  name: string;
-  phone: string;
-  reviewText: string;
-  date: Date;
-  avatar: string;
-  rating: number;
-}) {
-  if (await prisma.review.findFirst({ where: { phone: data.phone } })) {
-    return { success: false, error: "Вы уже оставили отзыв" };
-  } else {
-    const newReview = await prisma.review.create({
-      data,
-    });
-    return { success: true, review: newReview };
-  }
-}
-
-export async function updateReview(
-  identify: { id: number; phone: string },
-  data: {
-    name?: string;
-    reviewText?: string;
-    date?: Date;
-    avatar?: string;
-  },
-) {
-  const review = await prisma.review.findUnique({
-    where: { id: identify.id, phone: identify.phone },
-  });
-  if (!review) {
-    return { success: false, error: "Отзыв не найден" };
-  }
-  const updatedReview = await prisma.review.update({
-    where: { id: identify.id, phone: identify.phone },
-    data,
-  });
-  return { success: true, review: updatedReview };
-}
-
-export async function deleteReview(identify: { id: number; phone: string }) {
-  if (
-    (await prisma.review.findFirst({
-      where: { id: identify.id, phone: identify.phone },
-    })) === null
-  ) {
-    return {
-      success: false,
-      error: "Отзыв не найден или телефон не совпадает",
-    };
-  }
-  await prisma.review.delete({
-    where: { id: identify.id, phone: identify.phone },
-  });
-  return { success: true };
-}
+;
 
 
 export async function uploadAvatar(

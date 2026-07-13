@@ -174,7 +174,7 @@ export default async function Home() {
                 </div>
                 <h3 style={{ fontSize: '1.05rem', color: 'var(--color-primary)', marginBottom: '0.5rem' }}>{d.specialization}</h3>
                 <p style={{ fontSize: '0.88rem', lineHeight: 1.6, color: 'var(--text-secondary)', marginBottom: '1rem' }}>{d.description}</p>
-                <Link href={`/doctors/${d.id}`} style={{ fontSize: '0.85rem', color: 'var(--color-accent)', fontWeight: 600 }}>
+                <Link href={`/booking?doctorId=${d.id}`} style={{ fontSize: '0.85rem', color: 'var(--color-accent)', fontWeight: 600 }}>
                   Подробнее →
                 </Link>
               </div>

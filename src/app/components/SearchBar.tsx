@@ -172,7 +172,7 @@ export default function SearchBar<T>({
             boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
           }}
         >
-          {results.map((item, i) => {
+          {results?.map((item, i) => {
             const active = i === activeIndex;
             return (
               <div
@@ -184,7 +184,11 @@ export default function SearchBar<T>({
                   cursor: 'pointer',
                 }}
               >
-                {renderItem(item, active)}
+                {renderItem?.(item, active) || (
+                  <div style={{ padding: '0.75rem 1rem' }}>
+                    {getDisplayValue ? getDisplayValue(item) : getSearchText(item)}
+                  </div>
+                )}
               </div>
             );
           })}
