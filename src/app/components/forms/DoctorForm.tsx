@@ -13,7 +13,7 @@ interface Props {
   isAdmin: boolean;
   form: DoctorFormData;
   onChange: (form: DoctorFormData) => void;
-  onSubmit: (e: React.SyntheticEvent<HTMLFormElement>) => void;
+  onSubmit: (e: React.SubmitEvent<HTMLFormElement>) => void;
   saving: boolean;
   doctorId?: number;
   currentAvatar?: string | null;
@@ -85,7 +85,7 @@ export default function DoctorForm({
                 type="button"
                 onClick={() => setShowAvatarForm(v => !v)}
                 className="btn btn-secondary"
-                style={{ display: 'block', width: '100%', marginTop: '0.75rem', fontSize: '0.85rem' }}
+                style={{ display: 'flex', width: '100%', height: '100%', marginTop: '0.75rem', fontSize: '1rem' }}
               >
                 {showAvatarForm ? 'Скрыть' : 'Изменить фото'}
               </button>

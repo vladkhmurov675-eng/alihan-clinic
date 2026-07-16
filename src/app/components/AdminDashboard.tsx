@@ -93,7 +93,7 @@ export default function AdminDashboard({
       name: doc.name, phone: doc.phone, specialization: doc.specialization, avatar: doc.avatar,
       slotDuration: doc.slotDuration, workStartTime: doc.workStartTime,
       workEndTime: doc.workEndTime, weekends: doc.weekends,
-      disabledDates: doc.disabledDates, password: '',
+      disabledDates: doc.disabledDates, password: '', 
       education: doc.education ?? '', experienceYears: doc.experienceYears ?? 0, description: doc.description ?? '',
     });
     setShowDoctorForm(true);
@@ -121,7 +121,7 @@ export default function AdminDashboard({
         const result = await createDoctor({ ...doctorForm, password: doctorForm.password || '' });
         if (result.success) {
           setDoctors(prev => [...prev, result.doctor as Doctor]);
-          showToast('Врач добавлен'); resetDoctorForm();
+          showToast('Врач добавлен, не забудьте добавить для него процедуру'); resetDoctorForm(); setActiveTab('procedures'); setShowProcedureForm(true); setProcedureForm({...BLANK_PROCEDURE, doctorId: result.doctor.id})
         }
       }
     } catch { showToast('Ошибка сохранения', 'error'); }

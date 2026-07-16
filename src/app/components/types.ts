@@ -4,7 +4,8 @@ interface Doctor {
   id: number; name: string; phone: string; specialization: string;
   avatar: string | null; slotDuration: number; workStartTime: string;
   workEndTime: string; weekends: string; disabledDates: string;
-  education?: string | null; experienceYears?: number | null;
+  education?: string | null; experienceYears?: number | null; Procedure: Procedure | undefined;
+  procedureId: number;
   description?: string | null; createdAt: Date;
 }
 

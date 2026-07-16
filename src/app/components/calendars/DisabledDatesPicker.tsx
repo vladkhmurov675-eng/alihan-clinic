@@ -272,7 +272,7 @@ export default function DisabledDatesPicker({ value, onChange }: Props) {
                 color: "var(--text-primary)",
                 justifyContent: "center",
                 borderRadius: 2,
-                padding: 6,
+                padding: 20,
                 cursor: "pointer",
               }}
             >

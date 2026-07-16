@@ -188,12 +188,13 @@ h6 {
 .form-container > div:first-child button {
   background: var(--bg-secondary, #f4f4f4);
   border: none;
-  border-radius: 50%;
+  border-radius: 8px;
   width: 26px;
   height: 26px;
   font-size: 16px;
-  line-height: 1;
+  justify-content: center;
   color: var(--text-muted, #888);
+  border-radius: 8px;
   cursor: pointer;
   transition: background 0.15s ease;
 }
@@ -205,7 +206,7 @@ h6 {
 .form-container .btn,
 .form-container button:not(:first-child button) {
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 0.6rem 0.9rem;
   font-size: 0.85rem;
   font-weight: 600;
@@ -317,10 +318,11 @@ h6 {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  border-radius: 2px;
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
+  border-radius: 8px;
   border: 1px solid transparent;
   transition: all 0.2s ease;
   text-decoration: none;
@@ -427,19 +429,20 @@ h6 {
 }
 
 .btn-text {
-  position: relative; 
+position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   margin: 6px;
-  height: 20px;
+  min-width: 44px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   background: none;
-  border-right: 2px ;
-  padding: 16px 16px;
+  padding: 20px;
   font-size: inherit;
   font: inherit;
+  line-height: 1.2;
 }
 
 .btn-text:hover{
